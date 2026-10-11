@@ -1,0 +1,975 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Interactive parametric shell with six live textures, by Dhyey Acharya.">
+<style>*,*::before,*::after{box-sizing:border-box} body{margin:0;font:14px system-ui,sans-serif} img{max-width:100%}</style>
+<title>Shell Perforation Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one working screen — live 3D viewer on the left, a parameter rail on the right (stacks below on phones) */
+:root {
+  --bg: #ffffff;          /* white stage */
+  --panel: #f5f6f7;
+  --ink: #16191d;
+  --muted: #5b636d;
+  --line: #cfd4da;
+  --accent: #2747c9;      /* drafting cobalt */
+  --accent-soft: #dbe2fb;
+  --shell: #8d9196;       /* object material: light grey */
+  --shell-in: #4a4e53;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 14px; }
+.app { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 340px; }
+.stage { position: relative; min-width: 0; min-height: 0; }
+#view { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.stage-head { position: absolute; left: 20px; top: 18px; right: 20px; pointer-events: none; display: flex; flex-direction: column; gap: 4px; }
+.eyebrow { font-family: var(--font-data); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: clamp(22px, 2.6vw, 34px); line-height: 1.05; letter-spacing: -0.01em; text-wrap: balance; }
+.readout { position: absolute; left: 20px; bottom: 18px; right: 20px; display: flex; flex-wrap: wrap; gap: 6px 22px; pointer-events: none;
+  font-family: var(--font-data); font-size: 12px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.readout b { color: var(--ink); font-weight: 500; }
+.stage-error { position: absolute; left: 20px; right: 20px; top: 45%; margin: 0; text-align: center; color: var(--muted); font-size: 14px; }
+.view-tools { position: absolute; right: 16px; top: 16px; display: flex; gap: 6px; }
+
+.rail { background: var(--panel); border-left: 1px solid var(--line); overflow-y: auto; min-width: 0;
+  padding-block: 18px 28px; padding-inline: 20px; display: flex; flex-direction: column; gap: 22px; }
+.group { display: flex; flex-direction: column; gap: 14px; }
+.group-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+.group-head h2 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 17px; }
+.group-head span { font-family: var(--font-data); font-size: 11px; color: var(--muted); }
+
+.field { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; align-items: baseline; }
+.field label { font-size: 13px; }
+.field output { font-family: var(--font-data); font-size: 12px; font-variant-numeric: tabular-nums; color: var(--accent); }
+.field input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); margin: 0; }
+.field input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.note { font-size: 12px; color: var(--muted); line-height: 1.5; margin: 0; }
+
+.seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.seg button { font: 500 11px/1.2 var(--font-body); padding: 8px 2px; border-radius: 6px; border: 1px solid var(--line);
+  background: transparent; color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
+.seg button:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn { font: 500 12px var(--font-body); padding: 7px 11px; border-radius: 6px; border: 1px solid var(--line);
+  background: var(--panel); color: var(--ink); cursor: pointer; }
+.btn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+@media (max-width: 760px) {
+  .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: 62vh auto; height: auto; }
+  .stage { height: 62vh; }
+  .rail { border-left: 0; border-top: 1px solid var(--line); overflow: visible; padding-inline: 16px; }
+  .stage-head { left: 16px; right: 16px; }
+  .view-tools { top: auto; bottom: 64px; right: 16px; }
+  .readout { left: 16px; right: 16px; gap: 4px 14px; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+
+
+<div class="app">
+  <section class="stage" aria-label="3D view">
+    <canvas id="view"></canvas>
+    <div class="stage-head">
+      <span class="eyebrow">Form + texture · live parametric model</span>
+      <h1>Shell perforation study</h1>
+    </div>
+    <div class="view-tools">
+      <button class="btn" id="btn-construct" aria-pressed="false" type="button">Construction</button>
+      <button class="btn" id="btn-reset" type="button">Reset view</button>
+    </div>
+    <div class="readout" aria-live="polite">
+      <span>Footprint <b id="r-foot">–</b></span>
+      <span>Height <b id="r-height">–</b></span>
+      <span><span id="l-a">Holes</span> <b id="r-holes">–</b></span>
+      <span><span id="l-b">Open area</span> <b id="r-open">–</b></span>
+    </div>
+  </section>
+
+  <aside class="rail" aria-label="Parameters">
+    <div class="group">
+      <div class="group-head"><h2>Texture</h2><span id="tx-count">6 textures</span></div>
+      <div class="seg" role="group" aria-label="Texture type">
+        <button type="button" id="tx-perf" aria-pressed="true">Perforation</button>
+        <button type="button" id="tx-ribs" aria-pressed="false">Ribs</button>
+        <button type="button" id="tx-rd" aria-pressed="false">Reaction-diffusion</button>
+        <button type="button" id="tx-wave" aria-pressed="false">Wave</button>
+        <button type="button" id="tx-facet" aria-pressed="false">Faceted</button>
+        <button type="button" id="tx-ripple" aria-pressed="false">Ripple</button>
+      </div>
+      <p class="note" id="tx-note">Hole size grows away from the cap centre and the edge ring, then fades back to the minimum at both.</p>
+    </div>
+
+    <div class="group" id="g-perf">
+      <div class="group-head"><h2>Perforation</h2><span>inches</span></div>
+      <div id="perf-fields"></div>
+    </div>
+
+    <div class="group" id="g-facet" hidden>
+      <div class="group-head"><h2>Facets</h2><span>inches</span></div>
+      <div id="facet-fields"></div>
+      <div class="row"><button class="btn" id="btn-shuffle" type="button">Reshuffle facets</button></div>
+    </div>
+
+    <div class="group" id="g-ribs" hidden>
+      <div class="group-head"><h2>Ribs</h2><span>inches</span></div>
+      <div id="ribs-fields"></div>
+    </div>
+
+    <div class="group" id="g-wave" hidden>
+      <div class="group-head"><h2>Wave</h2><span>inches</span></div>
+      <div id="wave-fields"></div>
+    </div>
+
+    <div class="group" id="g-rd" hidden>
+      <div class="group-head"><h2>Reaction-diffusion</h2><span>inches</span></div>
+      <div id="rd-fields"></div>
+      <div class="row"><button class="btn" id="btn-regrow" type="button">Regrow pattern</button></div>
+    </div>
+
+    <div class="group" id="g-ripple" hidden>
+      <div class="group-head"><h2>Ripple</h2><span>inches</span></div>
+      <div id="ripple-fields"></div>
+      <div class="row"><button class="btn" id="btn-drops" type="button">Move drops</button></div>
+    </div>
+
+    <div class="group">
+      <div class="group-head"><h2>Form</h2><span>inches</span></div>
+      <div id="form-fields"></div>
+    </div>
+
+    <p class="note">Same construction as the Grasshopper definition: a single-span degree-5 dome cut by a horizontal plane, a curvature-matched wall swept to a flared base, and a staggered hole grid with graded radii.</p>
+  </aside>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/environments/RoomEnvironment.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/delaunator@5.0.1/delaunator.min.js"></script>
+<script>
+(function () {
+"use strict";
+function showError(msg) {
+  const st = document.querySelector('.stage');
+  let e = document.getElementById('stage-error');
+  if (!e) { e = document.createElement('p'); e.id = 'stage-error'; e.className = 'stage-error'; st.appendChild(e); }
+  e.textContent = msg;
+}
+if (!window.THREE || !THREE.OrbitControls || !window.Delaunator) {
+  showError('The 3D libraries did not load, so the model cannot be drawn. Reload the page; if it persists, the viewer is blocking cdn.jsdelivr.net.');
+  return;
+}
+const OrbitControls = THREE.OrbitControls, RoomEnvironment = THREE.RoomEnvironment, Delaunator = window.Delaunator;
+
+
+// Geometry kernel: a direct port of the Grasshopper definition (units: inches).
+// No Three.js dependency, so it can be tested in node.
+
+const BIN5 = [1, 5, 10, 10, 5, 1];
+const BIN4 = [1, 4, 6, 4, 1];
+const BIN3 = [1, 3, 3, 1];
+
+function bern(n, bin, t) {
+  const out = new Array(n + 1);
+  for (let i = 0; i <= n; i++) out[i] = bin[i] * Math.pow(t, i) * Math.pow(1 - t, n - i);
+  return out;
+}
+
+// Height profile Q(t) of the single-span degree-5 patch, with first and second derivatives.
+function makeProfile(F) {
+  const q = [0, F, 1, 1, F, 0];
+  const d1 = [], d2 = [];
+  for (let i = 0; i < 5; i++) d1.push(5 * (q[i + 1] - q[i]));
+  for (let i = 0; i < 4; i++) d2.push(4 * (d1[i + 1] - d1[i]));
+  const ev = (c, n, t) => {           // Bernstein sum without allocations
+    const m = 1 - t; let s = 0;
+    const bin = n === 5 ? BIN5 : n === 4 ? BIN4 : BIN3;
+    let tp = 1;
+    for (let i = 0; i <= n; i++) { s += bin[i] * tp * Math.pow(m, n - i) * c[i]; tp *= t; }
+    return s;
+  };
+  return { Q: t => ev(q, 5, t), dQ: t => ev(d1, 4, t), ddQ: t => ev(d2, 3, t) };
+}
+
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+const mul = (a, s) => [a[0] * s, a[1] * s, a[2] * s];
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const len = a => Math.hypot(a[0], a[1], a[2]);
+const norm = a => { const l = len(a) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+
+function buildForm(p) {
+  // p: {L, W, H, F, M, cut, flare, A, thick}
+  const Lp = p.L * (1 + p.M), Wp = p.W * (1 + p.M);
+  const prof = makeProfile(p.F);
+  const k = (20 + 10 * p.F) / 32;
+  const zs = p.H / (k * k);
+
+  const S = (u, v) => [(u - 0.5) * Lp, (v - 0.5) * Wp, zs * prof.Q(u) * prof.Q(v)];
+  const Su = (u, v) => [Lp, 0, zs * prof.dQ(u) * prof.Q(v)];
+  const Sv = (u, v) => [0, Wp, zs * prof.Q(u) * prof.dQ(v)];
+  const normal = (u, v) => norm(cross(Su(u, v), Sv(u, v)));
+  const zc = p.H - p.cut;                          // horizontal cut plane
+
+  // 1. Cap edge: march out from the centre along rays in uv, bisect where z = zc
+  const NT = 256;
+  const edgeUV = [];
+  for (let i = 0; i < NT; i++) {
+    const th = (2 * Math.PI * i) / NT;
+    const du = Math.cos(th) * 0.5, dv = Math.sin(th) * 0.5;
+    let lo = 0, hi = 1, found = false;
+    const steps = 64;
+    for (let s = 1; s <= steps; s++) {
+      const r = s / steps;
+      if (S(0.5 + du * r, 0.5 + dv * r)[2] < zc) { lo = (s - 1) / steps; hi = r; found = true; break; }
+    }
+    if (!found) { lo = hi = 1; }
+    for (let it = 0; it < 40 && found; it++) {
+      const m = (lo + hi) / 2;
+      if (S(0.5 + du * m, 0.5 + dv * m)[2] >= zc) lo = m; else hi = m;
+    }
+    edgeUV.push([0.5 + du * lo, 0.5 + dv * lo, lo]);
+  }
+  const edge = edgeUV.map(([u, v]) => S(u, v));
+
+  // 2. Base curve: edge projected to the ground and scaled about the origin
+  const base = edge.map(e => [e[0] * p.flare, e[1] * p.flare, 0]);
+
+  // 3. Wall profiles (same construction as the Grasshopper script: G2 at the cap edge)
+  const profiles = [];
+  for (let i = 0; i < NT; i++) {
+    const [u, v] = edgeUV[i];
+    const p0 = edge[i];
+    let n = normal(u, v); if (n[2] < 0) n = mul(n, -1);
+    const tan = norm(sub(edge[(i + 1) % NT], edge[(i - 1 + NT) % NT]));
+    const out = norm([p0[0], p0[1], 0]);
+    let d1 = norm(cross(tan, n)); if (dot(d1, out) < 0) d1 = mul(d1, -1);
+    let best = 0, bd = Infinity;
+    for (let j = 0; j < NT; j++) { const d = len(sub(base[j], p0)); if (d < bd) { bd = d; best = j; } }
+    const p5 = base[best];
+    const Lw = bd;
+    // normal curvature of the dome in direction d1 (exact, from second derivatives)
+    const su = Su(u, v), sv = Sv(u, v);
+    const a11 = dot(su, su), a12 = dot(su, sv), a22 = dot(sv, sv);
+    const b1 = dot(d1, su), b2 = dot(d1, sv), det = a11 * a22 - a12 * a12;
+    const al = (b1 * a22 - b2 * a12) / det, be = (b2 * a11 - b1 * a12) / det;
+    const zuu = zs * prof.ddQ(u) * prof.Q(v), zuv = zs * prof.dQ(u) * prof.dQ(v), zvv = zs * prof.Q(u) * prof.ddQ(v);
+    const kn = (al * al * zuu + 2 * al * be * zuv + be * be * zvv) * n[2];
+    const a = p.A * Lw;
+    const p1 = add(p0, mul(d1, a));
+    const p2 = add(add(p1, mul(d1, a)), mul(n, 1.25 * a * a * kn));
+    const p4 = p5;                                   // base tension E = 0 in the file
+    const p3 = add(p2, mul(sub(p4, p2), 0.5));        // bulge K = 0 in the file
+    profiles.push([p0, p1, p2, p3, p4, p5]);
+  }
+
+  return { p, Lp, Wp, zc, S, Su, Sv, normal, edgeUV, edge, base, profiles, NT };
+}
+
+function evalProfile(cv, t) {
+  const b = bern(5, BIN5, t);
+  let x = 0, y = 0, z = 0;
+  for (let i = 0; i < 6; i++) { x += b[i] * cv[i][0]; y += b[i] * cv[i][1]; z += b[i] * cv[i][2]; }
+  return [x, y, z];
+}
+
+// Distance from a plan point to the cap edge polyline (plan)
+function edgeDistance(form, x, y) {
+  let best = Infinity;
+  const E = form.edge, N = E.length;
+  for (let i = 0; i < N; i++) {
+    const a = E[i], b = E[(i + 1) % N];
+    const ex = b[0] - a[0], ey = b[1] - a[1];
+    const t = Math.max(0, Math.min(1, ((x - a[0]) * ex + (y - a[1]) * ey) / (ex * ex + ey * ey)));
+    const d = Math.hypot(x - a[0] - t * ex, y - a[1] - t * ey);
+    if (d < best) best = d;
+  }
+  return best;
+}
+
+// Perforation: staggered lattice (checkerboard of a NU x NV grid), graded radii
+function buildPerforation(form, t) {
+  // t: {spacing, rmin, bridge, inset}
+  const sx = t.spacing / 2, sy = t.spacing * 0.77;       // same proportions as the 150 x 40 division
+  const NU = Math.max(2, Math.round(form.Lp / sx));
+  const NV = Math.max(2, Math.round(form.Wp / sy));
+  const dx = form.Lp / NU, dy = form.Wp / NV;
+  const nn = Math.min(2 * dx, Math.hypot(dx, dy));       // nearest-neighbour distance
+  const rmax = Math.max(t.rmin, nn / 2 - t.bridge / 2);
+
+  let zsum = 0; form.edge.forEach(e => zsum += e[2]);
+  const centre = [0, 0, (form.p.H + zsum / form.edge.length) / 2];
+
+  const pts = [];
+  for (let j = 0; j <= NV; j++) for (let i = 0; i <= NU; i++) {
+    if ((i + j) % 2) continue;
+    const u = i / NU, v = j / NV;
+    const P = form.S(u, v);
+    if (P[2] < form.zc) continue;                               // outside the cap
+    const de = edgeDistance(form, P[0], P[1]);
+    if (de < t.inset) continue;                                 // outside the inset ring: no holes
+    const dRing = de - t.inset;
+    const dC = len(sub(P, centre));
+    pts.push({ i, j, d: Math.min(dRing, dC) });
+  }
+  let dmax = 0; pts.forEach(q => dmax = Math.max(dmax, q.d));
+  // Bezier graph from the file: (0,0) (0,0.259) (0,1) (1,1)  ->  x = s^3
+  const ease = x => {
+    const s = Math.cbrt(Math.max(0, Math.min(1, x)));
+    const m = 1 - s;
+    return 3 * m * m * s * 0.259 + 3 * m * s * s * 1 + s * s * s;
+  };
+  const radii = new Float32Array((NU + 1) * (NV + 1));
+  let open = 0;
+  pts.forEach(q => {
+    const r = t.rmin + (rmax - t.rmin) * ease(dmax > 0 ? q.d / dmax : 0);
+    radii[q.j * (NU + 1) + q.i] = r;
+    open += Math.PI * r * r;
+  });
+  return { NU, NV, radii, count: pts.length, rmax, open };
+}
+
+function capArea(form) {
+  let a = 0; const E = form.edge;
+  for (let i = 0; i < E.length; i++) { const p = E[i], q = E[(i + 1) % E.length]; a += p[0] * q[1] - q[0] * p[1]; }
+  return Math.abs(a) / 2;
+}
+
+// ---------- Faceted texture ----------
+// Variable-density points over the cap (large facets in the middle, small near the edge),
+// Delaunay-triangulated in plan, each point raised along the surface normal by a random
+// amount scaled by an edge fade. Every triangle is flat, so the cap reads as facets.
+function hash2(i, j, s) {
+  let h = Math.imul(i, 374761393) ^ Math.imul(j, 668265263) ^ Math.imul(s, 2147483647);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+
+function buildFacets(form, f, Delaunator) {
+  // f: {size, depth, jitter, fade, seed}
+  const minSize = Math.min(f.size, 0.3);
+  const step = minSize * 0.85;
+  const NU = Math.round(form.Lp / step), NV = Math.round(form.Wp / step);
+  const uv = [], plan = [], lift = [];
+  for (let j = 0; j <= NV; j++) for (let i = 0; i <= NU; i++) {
+    const ju = (hash2(i, j, f.seed) - 0.5) * f.jitter, jv = (hash2(j, i, f.seed + 7) - 0.5) * f.jitter;
+    const u = (i + ju) / NU, v = (j + jv) / NV;
+    if (u < 0 || u > 1 || v < 0 || v > 1) continue;
+    const P = form.S(u, v);
+    if (P[2] < form.zc) continue;
+    const de = edgeDistance(form, P[0], P[1]);
+    if (de < minSize * 0.5) continue;
+    const g = smooth(0, f.fade, de);
+    const sz = minSize + (f.size - minSize) * g;          // local facet size
+    const keep = (minSize / sz) * (minSize / sz);          // thin out the grid to that density
+    if (hash2(i + 911, j + 377, f.seed) > keep) continue;
+    uv.push([u, v]); plan.push(P[0], P[1]);
+    lift.push(f.depth * g * hash2(i + 31, j + 17, f.seed + 3));
+  }
+  // the cap edge itself, unlifted, so facets die out into the wall joint
+  for (let i = 0; i < form.NT; i += 2) {
+    const e = form.edgeUV[i]; uv.push([e[0], e[1]]);
+    const P = form.edge[i]; plan.push(P[0], P[1]); lift.push(0);
+  }
+  const d = new Delaunator(Float64Array.from(plan));
+  const pos = [];
+  for (let t = 0; t < d.triangles.length; t += 3) {
+    for (let k = 0; k < 3; k++) {
+      const q = d.triangles[t + k];
+      const [u, v] = uv[q];
+      const P = form.S(u, v); let n = form.normal(u, v); if (n[2] < 0) n = mul(n, -1);
+      pos.push(add(P, mul(n, lift[q])));
+    }
+  }
+  return { pos, count: d.triangles.length / 3 };
+}
+
+// ---------- Height-field textures (ribs, wave, reaction-diffusion) ----------
+// A dense ring mesh over the cap; every vertex knows its plan position, surface normal and
+// distance to the cap edge, so a texture is just a height function h(x, y, edgeDist).
+function edgeRaster(form, cell = 0.08) {
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  form.edge.forEach(e => { x0 = Math.min(x0, e[0]); x1 = Math.max(x1, e[0]); y0 = Math.min(y0, e[1]); y1 = Math.max(y1, e[1]); });
+  x0 -= cell; y0 -= cell;
+  const W = Math.ceil((x1 - x0) / cell) + 2, H = Math.ceil((y1 - y0) / cell) + 2;
+  const D = new Float32Array(W * H);
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) D[j * W + i] = edgeDistance(form, x0 + i * cell, y0 + j * cell);
+  return (x, y) => {
+    const fx = (x - x0) / cell, fy = (y - y0) / cell;
+    const i = Math.max(0, Math.min(W - 2, Math.floor(fx))), j = Math.max(0, Math.min(H - 2, Math.floor(fy)));
+    const tx = Math.max(0, Math.min(1, fx - i)), ty = Math.max(0, Math.min(1, fy - j));
+    return (D[j * W + i] * (1 - tx) + D[j * W + i + 1] * tx) * (1 - ty) + (D[(j + 1) * W + i] * (1 - tx) + D[(j + 1) * W + i + 1] * tx) * ty;
+  };
+}
+
+function buildDispBase(form, sub = 3, rings = 150) {
+  const edist = edgeRaster(form);
+  const NTd = form.NT * sub;
+  const euv = [];
+  for (let i = 0; i < form.NT; i++) {
+    const a = form.edgeUV[i], b = form.edgeUV[(i + 1) % form.NT];
+    for (let k = 0; k < sub; k++) { const t = k / sub; euv.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); }
+  }
+  const nv = (rings + 1) * NTd;
+  const P = new Float64Array(nv * 3), N = new Float64Array(nv * 3), ed = new Float64Array(nv);
+  let q = 0;
+  for (let r = 0; r <= rings; r++) {
+    const s = r / rings;
+    for (let i = 0; i < NTd; i++, q++) {
+      const u = 0.5 + (euv[i][0] - 0.5) * s, v = 0.5 + (euv[i][1] - 0.5) * s;
+      const p = form.S(u, v); let n = form.normal(u, v); if (n[2] < 0) n = mul(n, -1);
+      P[q * 3] = p[0]; P[q * 3 + 1] = p[1]; P[q * 3 + 2] = p[2];
+      N[q * 3] = n[0]; N[q * 3 + 1] = n[1]; N[q * 3 + 2] = n[2];
+      ed[q] = r === rings ? 0 : edist(p[0], p[1]);
+    }
+  }
+  const idx = new Uint32Array(rings * NTd * 6);
+  let k = 0;
+  for (let r = 0; r < rings; r++) for (let i = 0; i < NTd; i++) {
+    const a = r * NTd + i, b = r * NTd + (i + 1) % NTd, c = (r + 1) * NTd + i, d = (r + 1) * NTd + (i + 1) % NTd;
+    idx[k++] = a; idx[k++] = c; idx[k++] = b; idx[k++] = b; idx[k++] = c; idx[k++] = d;
+  }
+  return { P, N, ed, idx, nv, NTd, rings };
+}
+
+function heightRibs(x, y, ed, t) {
+  // t: {pitch, depth, angle (deg), fade}
+  const a = t.angle * Math.PI / 180;
+  const d = x * Math.cos(a) + y * Math.sin(a);
+  return t.depth * smooth(0, t.fade, ed) * (0.5 - 0.5 * Math.cos(2 * Math.PI * d / t.pitch));
+}
+
+function heightWave(x, y, ed, t) {
+  // t: {pitch, amp, depth, angle (deg), fade}; ridges run lengthwise at 0 deg and meander more toward the middle
+  const g = smooth(0, t.fade, ed);
+  const lam = 10 * t.pitch;
+  const an = (t.angle || 0) * Math.PI / 180;                  // 0 deg = ridges run along the length
+  const xr = x * Math.cos(an) + y * Math.sin(an), yr = -x * Math.sin(an) + y * Math.cos(an);
+  const d = yr + t.amp * smooth(0, 2 * t.fade, ed) * Math.sin(2 * Math.PI * xr / lam);
+  return t.depth * g * (0.5 - 0.5 * Math.cos(2 * Math.PI * d / t.pitch));
+}
+
+// Gray-Scott reaction-diffusion on a plan grid covering the cap
+const RD_PRESETS = [
+  { F: 0.0367, k: 0.0649 },   // spots
+  { F: 0.0545, k: 0.062 },    // coral
+  { F: 0.029, k: 0.057 },     // maze
+];
+function makeRD(form, t, seed) {
+  // t: {pattern (0,1,2), scale (in per cell)}
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  form.edge.forEach(e => { x0 = Math.min(x0, e[0]); x1 = Math.max(x1, e[0]); y0 = Math.min(y0, e[1]); y1 = Math.max(y1, e[1]); });
+  let cell = t.scale;
+  let W = Math.ceil((x1 - x0) / cell) + 3, H = Math.ceil((y1 - y0) / cell) + 3;
+  while (W * H > 300000) { cell *= 1.1; W = Math.ceil((x1 - x0) / cell) + 3; H = Math.ceil((y1 - y0) / cell) + 3; }
+  x0 -= cell; y0 -= cell;
+  const n = W * H;
+  const A = new Float32Array(n).fill(1), B = new Float32Array(n), A2 = new Float32Array(n), B2 = new Float32Array(n);
+  const mask = new Uint8Array(n);
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    const x = x0 + i * cell, y = y0 + j * cell;
+    const u = x / form.Lp + 0.5, v = y / form.Wp + 0.5;
+    if (u > 0 && u < 1 && v > 0 && v < 1 && form.S(u, v)[2] >= form.zc) mask[j * W + i] = 1;
+  }
+  // scatter seed blobs inside the cap
+  const blobs = Math.max(12, Math.round(n / 500));
+  for (let s = 0; s < blobs; s++) {
+    const ci = Math.floor(hash2(s, 7, seed) * W), cj = Math.floor(hash2(s, 13, seed) * H);
+    if (!mask[cj * W + ci]) continue;
+    for (let dj = -2; dj <= 2; dj++) for (let di = -2; di <= 2; di++) {
+      const ii = ci + di, jj = cj + dj;
+      if (ii > 0 && jj > 0 && ii < W - 1 && jj < H - 1 && mask[jj * W + ii]) B[jj * W + ii] = 1;
+    }
+  }
+  const pr = RD_PRESETS[Math.round(t.pattern)] || RD_PRESETS[1];
+  return { W, H, cell, x0, y0, A, B, A2, B2, mask, F: pr.F, K: pr.k, iter: 0, total: 3600 };
+}
+
+function stepRD(rd, n) {
+  const { W, H, mask, F, K } = rd;
+  let A = rd.A, B = rd.B, A2 = rd.A2, B2 = rd.B2;
+  for (let it = 0; it < n; it++) {
+    for (let j = 1; j < H - 1; j++) {
+      const r = j * W, rm = r - W, rp = r + W;
+      for (let i = 1; i < W - 1; i++) {
+        const c = r + i;
+        if (!mask[c]) { A2[c] = 1; B2[c] = 0; continue; }
+        const a = A[c], b = B[c], abb = a * b * b;
+        const la = 0.2 * (A[c - 1] + A[c + 1] + A[rm + i] + A[rp + i]) + 0.05 * (A[rm + i - 1] + A[rm + i + 1] + A[rp + i - 1] + A[rp + i + 1]) - a;
+        const lb = 0.2 * (B[c - 1] + B[c + 1] + B[rm + i] + B[rp + i]) + 0.05 * (B[rm + i - 1] + B[rm + i + 1] + B[rp + i - 1] + B[rp + i + 1]) - b;
+        const na = a + la - abb + F * (1 - a), nb = b + 0.5 * lb + abb - (F + K) * b;
+        A2[c] = na < 0 ? 0 : na > 1 ? 1 : na;
+        B2[c] = nb < 0 ? 0 : nb > 1 ? 1 : nb;
+      }
+    }
+    let tA = A; A = A2; A2 = tA; let tB = B; B = B2; B2 = tB;
+  }
+  rd.A = A; rd.B = B; rd.A2 = A2; rd.B2 = B2; rd.iter += n;
+}
+
+function heightRD(rd, x, y, ed, t) {
+  // t: {depth, fade}; bilinear sample of B
+  const fx = (x - rd.x0) / rd.cell, fy = (y - rd.y0) / rd.cell;
+  const i = Math.floor(fx), j = Math.floor(fy);
+  if (i < 0 || j < 0 || i >= rd.W - 1 || j >= rd.H - 1) return 0;
+  const tx = fx - i, ty = fy - j, W = rd.W, B = rd.B;
+  const b = (B[j * W + i] * (1 - tx) + B[j * W + i + 1] * tx) * (1 - ty) + (B[(j + 1) * W + i] * (1 - tx) + B[(j + 1) * W + i + 1] * tx) * ty;
+  return t.depth * smooth(0, t.fade, ed) * Math.min(1, b * 3);
+}
+
+// Ripple: concentric rings from a few "drop" points that interfere where they overlap
+function rippleDrops(form, n, seed) {
+  const drops = [];
+  for (let i = 0; i < 40 && drops.length < n; i++) {
+    const u = 0.5 + (hash2(i, 3, seed) - 0.5) * 0.45, v = 0.5 + (hash2(i, 9, seed) - 0.5) * 0.45;
+    const P = form.S(u, v);
+    if (P[2] < form.zc || edgeDistance(form, P[0], P[1]) < 1.2) continue;
+    drops.push([P[0], P[1]]);
+  }
+  if (!drops.length) drops.push([0, 0]);
+  return drops;
+}
+function heightRipple(x, y, ed, t, drops) {
+  // t: {pitch, depth, fade}; each drop's rings decay slowly with distance
+  let s = 0, w = 0;
+  for (const d of drops) {
+    const r = Math.hypot(x - d[0], y - d[1]);
+    const a = Math.exp(-r / 9);
+    s += a * Math.cos(2 * Math.PI * r / t.pitch); w += a;
+  }
+  return t.depth * smooth(0, t.fade, ed) * (0.5 + 0.5 * s / (w || 1));
+}
+
+
+// ---------- parameters (defaults = the Grasshopper file) ----------
+const FORM = [
+  { id: 'L', label: 'Length', min: 20, max: 30, step: 0.01, v: 27.68 },
+  { id: 'W', label: 'Width', min: 9, max: 14, step: 0.1, v: 11.4 },
+  { id: 'H', label: 'Dome height', min: 5, max: 12, step: 0.1, v: 5.3 },
+  { id: 'F', label: 'Crown fullness', min: 0.3, max: 2.5, step: 0.1, v: 1.8, unit: '' },
+  { id: 'cut', label: 'Cap depth', min: 0.3, max: 2, step: 0.05, v: 1.5 },
+  { id: 'flare', label: 'Base flare', min: 1, max: 1.5, step: 0.01, v: 1.09, unit: '×' },
+  { id: 'A', label: 'Shoulder tension', min: 0.02, max: 0.6, step: 0.01, v: 0.1, unit: '' },
+  { id: 'thick', label: 'Wall thickness', min: 0.1, max: 0.2, step: 0.01, v: 0.12 },
+];
+const PERF = [
+  { id: 'spacing', label: 'Hole spacing', min: 0.2, max: 0.8, step: 0.01, v: 0.4 },
+  { id: 'rmin', label: 'Hole radius, min', min: 0, max: 0.1, step: 0.005, v: 0.03 },
+  { id: 'bridge', label: 'Bridge width', min: 0.04, max: 0.3, step: 0.01, v: 0.12 },
+  { id: 'inset', label: 'Edge inset', min: 0.1, max: 1.5, step: 0.05, v: 0.35 },
+];
+const FACET = [
+  { id: 'size', label: 'Facet size, centre', min: 0.4, max: 2.5, step: 0.05, v: 1.3 },
+  { id: 'depth', label: 'Facet relief', min: 0, max: 0.35, step: 0.01, v: 0.2 },
+  { id: 'jitter', label: 'Irregularity', min: 0, max: 1, step: 0.05, v: 0.7, unit: '' },
+  { id: 'fade', label: 'Edge fade width', min: 0.3, max: 4, step: 0.05, v: 1.6 },
+];
+const RIBS = [
+  { id: 'pitch', label: 'Rib pitch', min: 0.2, max: 1.2, step: 0.01, v: 0.45 },
+  { id: 'depth', label: 'Rib depth', min: 0, max: 0.25, step: 0.01, v: 0.1 },
+  { id: 'angle', label: 'Rib angle', min: 0, max: 180, step: 1, v: 0, unit: '°', tight: true },
+  { id: 'fade', label: 'Edge fade width', min: 0.3, max: 4, step: 0.05, v: 1.5 },
+];
+const WAVE = [
+  { id: 'pitch', label: 'Wave pitch', min: 0.25, max: 1.2, step: 0.01, v: 0.5 },
+  { id: 'amp', label: 'Wave amplitude', min: 0, max: 1.5, step: 0.05, v: 0.6 },
+  { id: 'depth', label: 'Wave depth', min: 0, max: 0.25, step: 0.01, v: 0.1 },
+  { id: 'angle', label: 'Wave angle', min: 0, max: 180, step: 1, v: 0, unit: '°', tight: true },
+  { id: 'fade', label: 'Edge fade width', min: 0.3, max: 4, step: 0.05, v: 1.5 },
+];
+const RDP = [
+  { id: 'pattern', label: 'Pattern', min: 0, max: 2, step: 1, v: 1, labels: ['Spots', 'Coral', 'Maze'] },
+  { id: 'scale', label: 'Pattern scale', min: 0.03, max: 0.14, step: 0.005, v: 0.07 },
+  { id: 'depth', label: 'Relief', min: 0, max: 0.25, step: 0.01, v: 0.1 },
+  { id: 'fade', label: 'Edge fade width', min: 0.3, max: 4, step: 0.05, v: 1.5 },
+];
+const RIP = [
+  { id: 'pitch', label: 'Ripple pitch', min: 0.2, max: 1.2, step: 0.01, v: 0.5 },
+  { id: 'drops', label: 'Drops', min: 1, max: 5, step: 1, v: 2, unit: '' },
+  { id: 'depth', label: 'Ripple depth', min: 0, max: 0.25, step: 0.01, v: 0.1 },
+  { id: 'fade', label: 'Edge fade width', min: 0.3, max: 4, step: 0.05, v: 1.5 },
+];
+const P = { M: 0.08 };
+const TRP = { seed: 1 };
+let drops = null, dropsKey = '';
+const TR = {}, TW = {}, TRD = { seed: 1 };
+const FC = { seed: 1 };
+let texture = 'perf';
+const T = {};
+const fmt = (d, x) => { if (d.labels) return d.labels[Math.round(x)]; const dec = d.step >= 1 ? 0 : d.step < 0.01 ? 3 : d.step < 0.1 ? 2 : 1; return x.toFixed(dec) + (d.unit !== undefined ? (d.unit ? (d.tight ? '' : ' ') + d.unit : '') : ' in'); };
+
+function makeFields(host, defs, store) {
+  const el = document.getElementById(host);
+  el.style.display = 'flex'; el.style.flexDirection = 'column'; el.style.gap = '14px';
+  defs.forEach(d => {
+    store[d.id] = d.v;
+    const f = document.createElement('div'); f.className = 'field';
+    const sid = `s-${host.replace('-fields', '')}-${d.id}`;           // unique per texture group
+    f.innerHTML = `<label for="${sid}">${d.label}</label><output for="${sid}">${fmt(d, d.v)}</output>
+      <input type="range" id="${sid}" min="${d.min}" max="${d.max}" step="${d.step}" value="${d.v}">`;
+    el.appendChild(f);
+    const inp = f.querySelector('input'), out = f.querySelector('output');
+    inp.addEventListener('input', () => { store[d.id] = parseFloat(inp.value); out.textContent = fmt(d, store[d.id]); schedule(); });
+  });
+}
+
+// ---------- three.js scene ----------
+const canvas = document.getElementById('view');
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true }); }
+catch (err) { showError('This browser could not start WebGL, which the 3D view needs. Try another browser or enable hardware acceleration.'); return; }
+if (THREE.ColorManagement) THREE.ColorManagement.legacyMode = false;
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.72;
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 500);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.minDistance = 12; controls.maxDistance = 120;
+const key = new THREE.DirectionalLight(0xffffff, 1.1); key.position.set(-20, 40, 25); scene.add(key);
+const fill = new THREE.DirectionalLight(0xffffff, 0.35); fill.position.set(25, 10, -20); scene.add(fill);
+
+function resetView() {
+  const k = Math.max(1, Math.pow(1.25 / Math.max(0.3, camera.aspect), 0.85));
+  camera.position.set(-26 * k, 22 * k, 34 * k);
+  controls.target.set(0, 2.2, 0);
+  controls.update();
+}
+resetView();
+
+// soft contact shadow
+function blobTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d');
+  const gr = g.createRadialGradient(128, 128, 10, 128, 128, 128);
+  gr.addColorStop(0, 'rgba(0,0,0,0.35)'); gr.addColorStop(0.6, 'rgba(0,0,0,0.12)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+  return new THREE.CanvasTexture(c);
+}
+const shadow = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: blobTexture(), transparent: true, depthWrite: false }));
+shadow.rotation.x = -Math.PI / 2; shadow.position.y = -0.01; scene.add(shadow);
+
+// colours from CSS tokens
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+// hole uniforms shared by outer and inner cap
+const holeU = {
+  holeTex: { value: null }, uNU: { value: 1 }, uNV: { value: 1 }, uLp: { value: 1 }, uWp: { value: 1 }, uOn: { value: 1 },
+};
+function perforatedMaterial(color, rough) {
+  const m = new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0, side: THREE.DoubleSide, envMapIntensity: 0.6 });
+  m.onBeforeCompile = sh => {
+    Object.assign(sh.uniforms, holeU);
+    sh.vertexShader = 'attribute vec2 puv;\nvarying vec2 vPuv;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vPuv = puv;');
+    sh.fragmentShader = `uniform sampler2D holeTex; uniform float uNU, uNV, uLp, uWp, uOn; varying vec2 vPuv;\n` +
+      sh.fragmentShader.replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
+      if (uOn > 0.5) {
+        vec2 g0 = floor(vPuv * vec2(uNU, uNV));
+        for (int a = 0; a < 2; a++) for (int b = 0; b < 2; b++) {
+          ivec2 c = ivec2(g0) + ivec2(a, b);
+          if (c.x < 0 || c.y < 0 || c.x > int(uNU) || c.y > int(uNV)) continue;
+          float r = texelFetch(holeTex, c, 0).r;
+          if (r <= 0.0) continue;
+          vec2 d = (vPuv - vec2(c) / vec2(uNU, uNV)) * vec2(uLp, uWp);
+          if (length(d) < r) discard;
+        }
+      }`);
+  };
+  return m;
+}
+const matOuterCap = perforatedMaterial(new THREE.Color(), 0.55);
+const matInnerCap = perforatedMaterial(new THREE.Color(), 0.8);
+const matOuterWall = new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0, side: THREE.DoubleSide, envMapIntensity: 0.6 });
+const matInnerWall = new THREE.MeshStandardMaterial({ roughness: 0.8, metalness: 0, side: THREE.DoubleSide });
+const matDisp = new THREE.MeshStandardMaterial({ roughness: 0.5, metalness: 0, side: THREE.DoubleSide, envMapIntensity: 0.55 });
+const matFacet = new THREE.MeshStandardMaterial({ roughness: 0.38, metalness: 0, side: THREE.DoubleSide, flatShading: true, envMapIntensity: 0.45 });
+function applyColors() {
+  const sh = new THREE.Color(css('--shell')), si = new THREE.Color(css('--shell-in'));
+  matOuterCap.color.copy(sh); matOuterWall.color.copy(sh); matFacet.color.copy(sh); matDisp.color.copy(sh);
+  matInnerCap.color.copy(si); matInnerWall.color.copy(si);
+  lineMat.color.set(css('--accent'));
+}
+const lineMat = new THREE.LineBasicMaterial({ color: 0x2747c9 });
+
+const group = new THREE.Group(); scene.add(group);
+const construct = new THREE.Group(); construct.visible = false; scene.add(construct);
+
+// GH (x, y, z-up) -> three (x, z, -y)
+const toV = p => [p[0], p[2], -p[1]];
+
+function geomFrom(pos, idx, extra) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  if (extra) for (const k in extra) g.setAttribute(k, new THREE.Float32BufferAttribute(extra[k].a, extra[k].n));
+  g.setIndex(idx);
+  return g;
+}
+
+function orient(g) {
+  // flip triangle winding if it disagrees with the normal attribute (DoubleSide shading relies on it)
+  const pos = g.attributes.position.array, nor = g.attributes.normal.array, ix = g.index.array;
+  let agree = 0;
+  for (let t = 0; t < ix.length; t += 3 * 97) {
+    const a = ix[t] * 3, b = ix[t + 1] * 3, c = ix[t + 2] * 3;
+    const e1 = [pos[b] - pos[a], pos[b + 1] - pos[a + 1], pos[b + 2] - pos[a + 2]];
+    const e2 = [pos[c] - pos[a], pos[c + 1] - pos[a + 1], pos[c + 2] - pos[a + 2]];
+    const fn = [e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]];
+    agree += Math.sign(fn[0] * nor[a] + fn[1] * nor[a + 1] + fn[2] * nor[a + 2]);
+  }
+  if (agree < 0) { for (let t = 0; t < ix.length; t += 3) { const k = ix[t + 1]; ix[t + 1] = ix[t + 2]; ix[t + 2] = k; } g.index.needsUpdate = true; }
+  return g;
+}
+
+// height-field textures: cached dense cap per form, reaction-diffusion state per settings
+let dispBase = null, dispKey = '', dispGeo = null, rd = null, rdKey = '', lastDisp = 0;
+const DISP = ['ribs', 'wave', 'rd', 'ripple'];
+function heightAt(q) {
+  const x = dispBase.P[q * 3], y = dispBase.P[q * 3 + 1], e = dispBase.ed[q];
+  if (texture === 'ribs') return heightRibs(x, y, e, TR);
+  if (texture === 'wave') return heightWave(x, y, e, TW);
+  if (texture === 'ripple') return heightRipple(x, y, e, TRP, drops);
+  return rd ? heightRD(rd, x, y, e, TRD) : 0;
+}
+function applyDisp() {
+  const b = dispBase, pos = dispGeo.attributes.position.array;
+  for (let q = 0; q < b.nv; q++) {
+    const h = heightAt(q), o = q * 3;
+    const x = b.P[o] + b.N[o] * h, y = b.P[o + 1] + b.N[o + 1] * h, z = b.P[o + 2] + b.N[o + 2] * h;
+    pos[o] = x; pos[o + 1] = z; pos[o + 2] = -y;
+  }
+  dispGeo.attributes.position.needsUpdate = true;
+  dispGeo.computeVertexNormals();
+}
+function rdReadout() {
+  if (texture !== 'rd' || !rd) return;
+  document.getElementById('r-holes').textContent = `${Math.min(100, Math.round(100 * rd.iter / rd.total))} %`;
+}
+
+function build() {
+  const p = Object.assign({}, P);
+  const form = buildForm(p);
+  const NT = form.NT, RINGS = 56, TS = 30;
+
+  // ---- cap (outer + inner offset) ----
+  const capPos = [], capIn = [], capN = [], puv = [];
+  for (let r = 0; r <= RINGS; r++) {
+    const s = r / RINGS;
+    for (let i = 0; i < NT; i++) {
+      const e = form.edgeUV[i];
+      const u = 0.5 + (e[0] - 0.5) * s, v = 0.5 + (e[1] - 0.5) * s;
+      const P0 = form.S(u, v); let n = form.normal(u, v); if (n[2] < 0) n = n.map(x => -x);
+      capPos.push(...toV(P0));
+      capIn.push(...toV([P0[0] - n[0] * p.thick, P0[1] - n[1] * p.thick, P0[2] - n[2] * p.thick]));
+      capN.push(...toV(n)); puv.push(u, v);
+    }
+  }
+  const capIdx = [];
+  for (let r = 0; r < RINGS; r++) for (let i = 0; i < NT; i++) {
+    const a = r * NT + i, b = r * NT + (i + 1) % NT, c = (r + 1) * NT + i, d = (r + 1) * NT + (i + 1) % NT;
+    capIdx.push(a, c, b, b, c, d);
+  }
+  const capG = orient(geomFrom(capPos, capIdx.slice(), { normal: { a: capN, n: 3 }, puv: { a: puv, n: 2 } }));
+  const capInG = orient(geomFrom(capIn, capIdx.slice(), { normal: { a: capN.map(x => -x), n: 3 }, puv: { a: puv, n: 2 } }));
+
+  // ---- wall (outer), normals computed then offset for inner ----
+  const wPos = [];
+  for (let k = 0; k <= TS; k++) for (let i = 0; i < NT; i++) wPos.push(...toV(evalProfile(form.profiles[i], k / TS)));
+  const wIdx = [];
+  for (let k = 0; k < TS; k++) for (let i = 0; i < NT; i++) {
+    const a = k * NT + i, b = k * NT + (i + 1) % NT, c = (k + 1) * NT + i, d = (k + 1) * NT + (i + 1) % NT;
+    wIdx.push(a, b, c, b, d, c);
+  }
+  const wallG = geomFrom(wPos, wIdx); wallG.computeVertexNormals();
+  // make normals point outward
+  const nA = wallG.attributes.normal.array;
+  const midRow = Math.floor(TS / 2) * NT;
+  if (nA[midRow * 3] * wPos[midRow * 3] + nA[midRow * 3 + 2] * wPos[midRow * 3 + 2] < 0) for (let q = 0; q < nA.length; q++) nA[q] = -nA[q];
+  // top row normals = cap normals for a seamless shading join
+  for (let i = 0; i < NT; i++) { const e = form.edgeUV[i]; let n = form.normal(e[0], e[1]); if (n[2] < 0) n = n.map(x => -x); const v = toV(n); nA.set(v, i * 3); }
+  const wIn = wPos.map((x, q) => x - nA[q] * p.thick);
+  const wallInG = orient(geomFrom(wIn, wIdx.slice(), { normal: { a: Array.from(nA, x => -x), n: 3 } }));
+  orient(wallG);
+
+  // ---- bottom rim ----
+  const rimPos = [], rimIdx = [];
+  const base0 = TS * NT;
+  for (let i = 0; i < NT; i++) { rimPos.push(wPos[(base0 + i) * 3], 0, wPos[(base0 + i) * 3 + 2]); }
+  for (let i = 0; i < NT; i++) { rimPos.push(wIn[(base0 + i) * 3], 0, wIn[(base0 + i) * 3 + 2]); }
+  for (let i = 0; i < NT; i++) { const a = i, b = (i + 1) % NT, c = NT + i, d = NT + (i + 1) % NT; rimIdx.push(a, c, b, b, c, d); }
+  const rimG = geomFrom(rimPos, rimIdx); rimG.computeVertexNormals();
+
+  group.children.forEach(m => m.geometry.dispose()); group.clear();
+  let outerCap = new THREE.Mesh(capG, matOuterCap), facetInfo = null;
+  if (texture === 'facet') {
+    capG.dispose();
+    facetInfo = buildFacets(form, FC, Delaunator);
+    const fp = []; facetInfo.pos.forEach(q => fp.push(...toV(q)));
+    const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.Float32BufferAttribute(fp, 3));
+    fg.computeVertexNormals();
+    outerCap = new THREE.Mesh(fg, matFacet);
+  }
+  if (DISP.includes(texture)) {
+    capG.dispose();
+    const fk = JSON.stringify(P), fine = texture === 'rd' && TRD.scale < 0.05;
+    const dk = fk + (fine ? '|fine' : '');
+    if (dk !== dispKey) { dispBase = fine ? buildDispBase(form, 3, 170) : buildDispBase(form, 2, 130); dispKey = dk; }
+    if (texture === 'ripple') {
+      const k = fk + '|' + Math.round(TRP.drops) + '|' + TRP.seed;
+      if (k !== dropsKey) { drops = rippleDrops(form, Math.round(TRP.drops), TRP.seed); dropsKey = k; }
+    }
+    if (texture === 'rd') {
+      const k = fk + '|' + TRD.pattern + '|' + TRD.scale + '|' + TRD.seed;
+      if (k !== rdKey) { rd = makeRD(form, TRD, TRD.seed); rdKey = k; }
+    }
+    dispGeo = new THREE.BufferGeometry();
+    dispGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(dispBase.nv * 3), 3));
+    dispGeo.setIndex(new THREE.BufferAttribute(dispBase.idx, 1));
+    applyDisp();
+    outerCap = new THREE.Mesh(dispGeo, matDisp);
+  } else dispGeo = null;
+  holeU.uOn.value = texture === 'perf' ? 1 : 0;
+  const innerCap = new THREE.Mesh(capInG, matInnerCap); innerCap.visible = texture === 'perf';
+  group.add(outerCap, innerCap,
+            new THREE.Mesh(wallG, matOuterWall), new THREE.Mesh(wallInG, matInnerWall), new THREE.Mesh(rimG, matInnerWall));
+
+  // ---- perforation ----
+  const perf = buildPerforation(form, T);
+  if (holeU.holeTex.value) holeU.holeTex.value.dispose();
+  const tex = new THREE.DataTexture(perf.radii, perf.NU + 1, perf.NV + 1, THREE.RedFormat, THREE.FloatType);
+  tex.minFilter = tex.magFilter = THREE.NearestFilter; tex.needsUpdate = true;
+  holeU.holeTex.value = tex; holeU.uNU.value = perf.NU; holeU.uNV.value = perf.NV;
+  holeU.uLp.value = form.Lp; holeU.uWp.value = form.Wp;
+
+  // ---- construction lines: cap edge, base curve, every 8th wall profile ----
+  construct.children.forEach(l => l.geometry.dispose()); construct.clear();
+  const loop = pts => { const a = []; pts.forEach(q => a.push(...toV(q))); a.push(...toV(pts[0])); const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(a, 3)); return new THREE.Line(g, lineMat); };
+  construct.add(loop(form.edge), loop(form.base));
+  for (let i = 0; i < NT; i += 8) {
+    const a = []; for (let k = 0; k <= 24; k++) a.push(...toV(evalProfile(form.profiles[i], k / 24)));
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(a, 3));
+    construct.add(new THREE.Line(g, lineMat));
+  }
+
+  // ---- shadow + readout ----
+  const xs = form.base.map(b => b[0]), ys = form.base.map(b => b[1]);
+  const fx = Math.max(...xs) - Math.min(...xs), fy = Math.max(...ys) - Math.min(...ys);
+  shadow.scale.set(fx * 1.35, fy * 1.6, 1);
+  document.getElementById('r-foot').textContent = `${fx.toFixed(1)} × ${fy.toFixed(1)} in`;
+  document.getElementById('r-height').textContent = `${p.H.toFixed(1)} in`;
+  if (texture === 'perf') {
+    document.getElementById('l-a').textContent = 'Holes';
+    document.getElementById('r-holes').textContent = perf.count.toLocaleString();
+    document.getElementById('l-b').textContent = 'Open area';
+    document.getElementById('r-open').textContent = `${(100 * perf.open / capArea(form)).toFixed(1)} % of cap`;
+  } else if (texture === 'ribs' || texture === 'wave') {
+    const t = texture === 'ribs' ? TR : TW;
+    document.getElementById('l-a').textContent = texture === 'ribs' ? 'Rib pitch' : 'Wave pitch';
+    document.getElementById('r-holes').textContent = `${t.pitch.toFixed(2)} in`;
+    document.getElementById('l-b').textContent = 'Max relief';
+    document.getElementById('r-open').textContent = `${t.depth.toFixed(2)} in`;
+  } else if (texture === 'ripple') {
+    document.getElementById('l-a').textContent = 'Ripple pitch';
+    document.getElementById('r-holes').textContent = `${TRP.pitch.toFixed(2)} in`;
+    document.getElementById('l-b').textContent = 'Drops';
+    document.getElementById('r-open').textContent = String(drops.length);
+  } else if (texture === 'rd') {
+    document.getElementById('l-a').textContent = 'Growth';
+    document.getElementById('l-b').textContent = 'Pattern';
+    document.getElementById('r-open').textContent = RDP[0].labels[Math.round(TRD.pattern)];
+    rdReadout();
+  } else {
+    document.getElementById('l-a').textContent = 'Facets';
+    document.getElementById('r-holes').textContent = facetInfo.count.toLocaleString();
+    document.getElementById('l-b').textContent = 'Max relief';
+    document.getElementById('r-open').textContent = `${FC.depth.toFixed(2)} in`;
+  }
+}
+
+let pending = false;
+function safeBuild() { try { build(); const e = document.getElementById('stage-error'); if (e) e.remove(); } catch (err) { console.error(err); showError('Could not build the model with these values: ' + err.message); } }
+function schedule() { if (!pending) { pending = true; requestAnimationFrame(() => { pending = false; safeBuild(); }); } }
+
+makeFields('form-fields', FORM, P);
+makeFields('perf-fields', PERF, T);
+makeFields('facet-fields', FACET, FC);
+makeFields('ribs-fields', RIBS, TR);
+makeFields('wave-fields', WAVE, TW);
+makeFields('rd-fields', RDP, TRD);
+makeFields('ripple-fields', RIP, TRP);
+applyColors();
+safeBuild();
+
+// theme changes
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyColors);
+new MutationObserver(applyColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+// buttons
+document.getElementById('btn-reset').addEventListener('click', resetView);
+const bc = document.getElementById('btn-construct');
+bc.addEventListener('click', () => { construct.visible = !construct.visible; bc.setAttribute('aria-pressed', String(construct.visible)); });
+const note = document.getElementById('tx-note');
+const NOTES = {
+  perf: note.textContent,
+  facet: 'Facets are largest in the middle of the cap and shrink toward the edge, where their relief fades to zero so the cap meets the wall cleanly.',
+  ribs: 'Rounded parallel ribs whose depth fades to zero toward the cap edge, so the cap meets the wall cleanly.',
+  wave: 'Ribs that meander more toward the middle of the cap and straighten and flatten toward the edge.',
+  ripple: 'Concentric rings spreading from a few drop points, interfering where they overlap, and fading to zero at the cap edge.',
+  rd: 'A Gray-Scott reaction-diffusion simulation grown live on the cap. Pattern and scale restart the growth; relief and fade reshape the result.',
+};
+const TX = { 'tx-perf': 'perf', 'tx-facet': 'facet', 'tx-ribs': 'ribs', 'tx-wave': 'wave', 'tx-rd': 'rd', 'tx-ripple': 'ripple' };
+document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
+  texture = TX[b.id];
+  document.querySelectorAll('.seg button').forEach(o => o.setAttribute('aria-pressed', String(o === b)));
+  document.getElementById('g-perf').hidden = texture !== 'perf';
+  document.getElementById('g-facet').hidden = texture !== 'facet';
+  document.getElementById('g-ribs').hidden = texture !== 'ribs';
+  document.getElementById('g-wave').hidden = texture !== 'wave';
+  document.getElementById('g-rd').hidden = texture !== 'rd';
+  document.getElementById('g-ripple').hidden = texture !== 'ripple';
+  note.textContent = NOTES[texture];
+  schedule();
+}));
+document.getElementById('btn-shuffle').addEventListener('click', () => { FC.seed++; schedule(); });
+document.getElementById('btn-drops').addEventListener('click', () => { TRP.seed++; schedule(); });
+document.getElementById('btn-regrow').addEventListener('click', () => { TRD.seed++; schedule(); });
+
+// resize + loop
+function resize() {
+  const r = canvas.parentElement.getBoundingClientRect();
+  renderer.setSize(r.width, r.height, false);
+  camera.aspect = r.width / Math.max(1, r.height); camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(canvas.parentElement); resize(); resetView();
+renderer.setAnimationLoop(() => {
+  if (texture === 'rd' && rd && dispGeo && rd.iter < rd.total) {
+    try {
+      const t0 = performance.now();
+      while (rd.iter < rd.total && performance.now() - t0 < 14) stepRD(rd, 2);   // ~14 ms of simulation per frame
+      const now = performance.now();
+      if (rd.iter >= rd.total || now - lastDisp > 150) { applyDisp(); rdReadout(); lastDisp = now; }
+    } catch (err) { console.error(err); }
+  }
+  controls.update(); renderer.render(scene, camera);
+});
+})();
+</script>
+
+</body>
+</html>
