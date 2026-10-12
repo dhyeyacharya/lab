@@ -1,0 +1,1112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Computational Validation</title>
+<meta name="description" content="An interactive validation loop that turns sleeper pressure maps into a gel-grid mattress sized stub by stub. By Dhyey Acharya.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Designing a mattress from the spine out">
+<meta property="og:description" content="Pressure map to depth map to spine curve to match score to a generated gel grid. An interactive computational validation study by Dhyey Acharya.">
+<meta property="og:url" content="https://dhyeyacharya.github.io/lab/validation/">
+<meta property="og:image" content="https://dhyeyacharya.github.io/lab/validation/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232747c9'/%3E%3Cg fill='%23fff'%3E%3Ccircle cx='8' cy='8' r='2'/%3E%3Ccircle cx='16' cy='8' r='3'/%3E%3Ccircle cx='24' cy='8' r='2'/%3E%3Ccircle cx='8' cy='16' r='3'/%3E%3Ccircle cx='16' cy='16' r='4.5'/%3E%3Ccircle cx='24' cy='16' r='3'/%3E%3Ccircle cx='8' cy='24' r='2'/%3E%3Ccircle cx='16' cy='24' r='3'/%3E%3Ccircle cx='24' cy='24' r='2'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Scrolling story: hero, sticky controls, numbered steps (caption left, live figure right), method, footer */
+:root {
+  --bg: #ffffff;
+  --panel: #f5f6f7;
+  --ink: #16191d;
+  --ink-2: #3a4048;
+  --muted: #5b636d;
+  --line: #cfd4da;
+  --grid: #e1e4e8;
+  --dot: #c5cbd2;
+  --ax: #aab2bb;
+  --node-off: #c9ced5;
+  --accent: #2747c9;          /* drafting cobalt, shared with project 01 */
+  --accent-soft: #dbe2fb;
+  --gen: #d4602a;             /* generated design */
+  --gen-soft: #fbe4d8;
+  --mode: light;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1013; --panel: #16191d; --ink: #e8ebee; --ink-2: #c3c9d0; --muted: #959ea8; --line: #2b3037;
+    --grid: #23272d; --dot: #353b43; --ax: #48505a; --node-off: #3d434b;
+    --accent: #8aa0ff; --accent-soft: #1d2858; --gen: #f0997b; --gen-soft: #3a2219; --mode: dark; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1013; --panel: #16191d; --ink: #e8ebee; --ink-2: #c3c9d0; --muted: #959ea8; --line: #2b3037;
+  --grid: #23272d; --dot: #353b43; --ax: #48505a; --node-off: #3d434b;
+  --accent: #8aa0ff; --accent-soft: #1d2858; --gen: #f0997b; --gen-soft: #3a2219; --mode: dark; color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 var(--font-body); -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+.wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 18px 0; font: 11px var(--font-data); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.top a { color: var(--ink); text-decoration: none; }
+.top a:hover { color: var(--accent); }
+
+.hero { padding: 36px 0 8px; }
+.eyebrow { font: 11px var(--font-data); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(36px, 5.6vw, 68px); line-height: 1.0; letter-spacing: -0.02em; margin: 14px 0 20px; max-width: 15ch; text-wrap: balance; }
+.dek { font-size: clamp(17px, 1.7vw, 20px); line-height: 1.5; color: var(--ink-2); max-width: 60ch; margin: 0 0 20px; text-wrap: pretty; }
+.datanote { max-width: 68ch; margin: 0; padding: 2px 0 2px 14px; border-left: 2px solid var(--accent); font-size: 13px; line-height: 1.55; color: var(--muted); }
+.datanote b { color: var(--ink); font-weight: 500; }
+.hero-fig { margin: 36px 0 0; }
+.hero-fig figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; margin-top: 10px; font: 12px var(--font-data); color: var(--muted); }
+.loop { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 6px; margin: 28px 0 0; padding: 0; }
+.loop li { display: flex; align-items: center; gap: 6px; }
+.loop li + li::before { content: "→"; color: var(--muted); font-size: 13px; }
+.loop a { display: inline-flex; gap: 8px; align-items: baseline; padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; text-decoration: none; font-size: 13px; color: var(--ink); background: var(--bg); }
+.loop a span { font: 11px var(--font-data); color: var(--accent); }
+.loop a:hover { border-color: var(--accent); }
+.loop a:focus-visible, .seg button:focus-visible, .bar input:focus-visible, .top a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.bar { position: sticky; top: 0; z-index: 20; margin-top: 40px; background: color-mix(in srgb, var(--bg) 90%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-block: 1px solid var(--line); }
+.bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; padding-block: 10px; }
+.ctl { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.lab { font: 11px var(--font-data); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.seg { display: flex; gap: 4px; flex-wrap: wrap; }
+.seg button { font: 500 13px/1.15 var(--font-body); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--ink-2); cursor: pointer; text-align: left; }
+.seg button small { display: block; font: 400 10.5px/1.2 var(--font-data); color: var(--muted); margin-top: 1px; }
+.seg button:hover { border-color: var(--ax); }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
+.seg button[data-m="G"][aria-pressed="true"] { background: var(--gen-soft); border-color: var(--gen); }
+.slide { display: flex; align-items: center; gap: 8px; }
+.slide input { width: 130px; accent-color: var(--accent); margin: 0; }
+.slide output { font: 12px var(--font-data); color: var(--muted); min-width: 3.2em; font-variant-numeric: tabular-nums; }
+.score { margin-left: auto; display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+.score b { font: 700 30px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.score span { font: 11px var(--font-data); color: var(--muted); }
+
+.step { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 48px; padding: 76px 0; border-top: 1px solid var(--line); scroll-margin-top: calc(var(--bar-h, 64px) + 8px); }
+.step:first-child { border-top: 0; }
+.cap { position: sticky; top: calc(var(--bar-h, 64px) + 28px); align-self: start; }
+.num { font: 12px var(--font-data); color: var(--accent); letter-spacing: .04em; }
+.cap h2 { font: 700 30px/1.08 var(--font-display); letter-spacing: -0.01em; margin: 6px 0 14px; text-wrap: balance; }
+.cap p { margin: 0 0 12px; color: var(--ink-2); text-wrap: pretty; }
+.cap .how { font-size: 13px; line-height: 1.5; color: var(--muted); }
+.cap .how i { font-style: normal; color: var(--accent); }
+.vis { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 16px 14px; min-width: 0; }
+.card-hd { display: flex; justify-content: space-between; align-items: center; gap: 8px 14px; flex-wrap: wrap; margin: 0 0 10px; }
+.card-hd h3 { margin: 0; font: 500 13px/1.3 var(--font-body); color: var(--ink); }
+.card-hd .hint { font: 12px var(--font-body); color: var(--accent); display: inline-flex; align-items: center; gap: 6px; }
+.cw { position: relative; width: 100%; }
+.cw canvas { display: block; touch-action: pan-y; }
+.stats { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 10px 0 0; font: 12px var(--font-data); color: var(--muted); font-variant-numeric: tabular-nums; }
+.stats b { color: var(--ink); font-weight: 500; }
+.hv { margin: 8px 0 0; min-height: 1.6em; font: 12px/1.5 var(--font-data); color: var(--muted); font-variant-numeric: tabular-nums; }
+.key { margin: 8px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+.duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.split { display: grid; grid-template-columns: minmax(0, 1fr) 190px; gap: 16px; align-items: start; }
+#cF { cursor: grab; border-radius: 4px; touch-action: none; }
+#cF.drag { cursor: grabbing; }
+#cF:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pulse { position: absolute; width: 28px; height: 28px; margin: -14px 0 0 -14px; border-radius: 50%; border: 2px solid var(--accent); pointer-events: none; animation: pulse 1.6s ease-out infinite; }
+@keyframes pulse { 0% { transform: scale(.6); opacity: .9; } 100% { transform: scale(2.1); opacity: 0; } }
+
+.method { padding: 76px 0 40px; border-top: 1px solid var(--line); scroll-margin-top: calc(var(--bar-h, 64px) + 8px); }
+.method h2 { font: 700 30px/1.08 var(--font-display); margin: 6px 0 24px; }
+.method ol { list-style: none; counter-reset: m; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 48px; }
+.method li { counter-increment: m; align-content: start; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 2px 8px; }
+.method li::before { content: counter(m, decimal-leading-zero); font: 12px/1.9 var(--font-data); color: var(--accent); grid-row: span 2; }
+.method li b { font-weight: 500; }
+.method li p { margin: 0; font-size: 14px; color: var(--ink-2); line-height: 1.55; }
+.method code { font: 12.5px var(--font-data); background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; white-space: nowrap; }
+.method .datanote { margin-top: 36px; }
+footer { border-top: 1px solid var(--line); margin-top: 40px; }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; padding-block: 22px 40px; font: 12px var(--font-data); color: var(--muted); }
+footer a { color: var(--ink); text-decoration: none; }
+footer a:hover { color: var(--accent); }
+
+@media (max-width: 960px) {
+  .step { grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 56px 0; }
+  .cap { position: static; max-width: 62ch; }
+  .method ol { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 680px) {
+  .wrap { padding: 0 16px; }
+  .duo, .split { grid-template-columns: minmax(0, 1fr); }
+  .bar .wrap { gap: 8px 12px; padding-block: 8px; }
+  .bar .lab { display: none; }
+  .seg button { padding: 6px 8px; font-size: 12.5px; }
+  .seg button small { display: none; }
+  .slide input { width: 110px; flex: 1; }
+  .ctl.grow { flex: 1; }
+  .score b { font-size: 24px; }
+  .hero { padding-top: 20px; }
+  .top span { display: none; }
+  .loop li + li::before { display: none; }
+  .step { padding: 44px 0; }
+}
+@media (prefers-reduced-motion: reduce) { .pulse { animation: none; opacity: .6; } html { scroll-behavior: auto; } }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="top" aria-label="Site">
+    <a href="https://dhyey-acharya.com">Dhyey Acharya</a>
+    <span>Project 02 · Computational validation</span>
+  </nav>
+  <header class="hero">
+    <span class="eyebrow">Computational validation · Ergonomics data to product</span>
+    <h1>Designing a mattress from the spine out</h1>
+    <p class="dek">A validation loop that turns pressure maps of real sleepers into a zoned gel-grid bed. It measures the body, predicts how each prototype gives, checks the spine against that person's neutral shape, sizes every stub from the heat map, then zones and re-tests the bed until it holds the spine best.</p>
+    <p class="datanote"><b>About the data.</b> The study data is proprietary to Purple Innovation, LLC. Every map, curve and score on this page comes from representative data generated by a body model; the steps mirror the method used in the study.</p>
+    <figure class="hero-fig">
+      <div class="cw"><canvas id="cH" role="img" aria-label="The generated zoned bed seen from above: one dot per stub, sized by its head-to-foot zone and colored by the pressure of the sleeper lying on it"></canvas></div>
+      <figcaption><span id="heroCap">Generated zoned bed · Average body</span><span>Dot size = stub size · color = pressure on the finished bed</span></figcaption>
+    </figure>
+    <ol class="loop" aria-label="The validation loop">
+      <li><a href="#s1"><span>01</span>Measure the body</a></li>
+      <li><a href="#s2"><span>02</span>Model the material</a></li>
+      <li><a href="#s3"><span>03</span>Simulate the sink</a></li>
+      <li><a href="#s4"><span>04</span>Validate the spine</a></li>
+      <li><a href="#s5"><span>05</span>Size every stub</a></li>
+      <li><a href="#s6"><span>06</span>Shape the firmness</a></li>
+      <li><a href="#s7"><span>07</span>Zone and validate the bed</a></li>
+    </ol>
+  </header>
+</div>
+
+<div class="bar" id="bar">
+  <div class="wrap">
+    <div class="ctl"><span class="lab">Body</span>
+      <div class="seg" id="bodies" role="group" aria-label="Body">
+        <button type="button" data-b="0" aria-pressed="false">Petite<small>5′1″ · 115 lb</small></button>
+        <button type="button" data-b="1" aria-pressed="true">Average<small>5′7″ · 165 lb</small></button>
+        <button type="button" data-b="2" aria-pressed="false">Tall<small>6′2″ · 185 lb</small></button>
+        <button type="button" data-b="3" aria-pressed="false">Large<small>5′10″ · 250 lb</small></button>
+      </div>
+    </div>
+    <div class="ctl"><span class="lab">Mattress</span>
+      <div class="seg" id="beds" role="group" aria-label="Mattress prototype">
+        <button type="button" data-m="0" aria-pressed="false">A<small>softest</small></button>
+        <button type="button" data-m="1" aria-pressed="true">B<small>&nbsp;</small></button>
+        <button type="button" data-m="2" aria-pressed="false">C<small>&nbsp;</small></button>
+        <button type="button" data-m="3" aria-pressed="false">D<small>firmest</small></button>
+        <button type="button" data-m="G" aria-pressed="false">Generated<small>zoned bed</small></button>
+      </div>
+    </div>
+    <div class="ctl grow"><span class="lab">Base stub</span>
+      <div class="slide"><input id="rng" type="range" min="0" max="1000" value="333" aria-label="Base stub size, softer to firmer"><output id="rngo" for="rng">B</output></div>
+    </div>
+    <div class="score" aria-live="polite"><b id="scv">0</b><span id="scl">/ 100 match</span></div>
+  </div>
+</div>
+
+<main class="wrap" id="main">
+  <section class="step" id="s1" aria-labelledby="h1s">
+    <div class="cap">
+      <span class="num">01 · Measure the body</span>
+      <h2 id="h1s">A pressure map of every sleeper</h2>
+      <p>Each participant lay on their back on every prototype while an XSensor mat recorded contact pressure: 64 × 160 sensors at half-inch spacing, covering the whole 32 × 80 inch sleep surface.</p>
+      <p>Shoulder blades, sacrum and heels carry the peaks. The small of the back barely touches, and that gap is exactly what the bed needs to fill.</p>
+      <p class="how">Switch <i>Body</i> in the bar above. Hover the map to read any sensor.</p>
+    </div>
+    <div class="vis">
+      <figure class="card" style="margin:0">
+        <div class="card-hd"><h3>Supine pressure, XSensor style</h3><canvas id="lP" role="img" aria-label="Pressure color scale from 0 to 80 mmHg"></canvas></div>
+        <div class="cw"><canvas id="cP" role="img" aria-label="Pressure map, 160 by 64 sensors, head at left, with the center of pressure marked"></canvas></div>
+        <p class="hv" id="hv1">Hover the map to read a sensor</p>
+        <div class="stats" id="st1"></div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="step" id="s2" aria-labelledby="h2s">
+    <div class="cap">
+      <span class="num">02 · Model the material</span>
+      <h2 id="h2s">How each prototype gives</h2>
+      <p>The bed is a square gel grid, one inch on a side, with a circular stub where the walls meet. Each prototype was compression tested for its pressure–displacement curve.</p>
+      <p>The grid gives easily at first, then stiffens as the walls buckle and fold onto the stubs. A larger stub makes the whole curve stiffer, so stub size alone tunes the support.</p>
+      <p class="how">Move across the chart to compare the beds at any pressure.</p>
+    </div>
+    <div class="vis">
+      <div class="split">
+        <figure class="card" style="margin:0">
+          <div class="card-hd"><h3>Pressure to depth</h3></div>
+          <div class="cw"><canvas id="cC" role="img" aria-label="Pressure to depth curves for prototypes A to D, the current stub and the generated stub"></canvas></div>
+          <p class="hv" id="hv2">Move across the chart</p>
+        </figure>
+        <figure class="card" style="margin:0">
+          <div class="card-hd"><h3>Grid close-up</h3></div>
+          <div class="cw"><canvas id="cX" role="img" aria-label="Close-up of the gel grid: one inch square cells with a stub at each wall intersection, drawn at the current size with the A and D sizes outlined"></canvas></div>
+          <p class="key" id="kX">Filled: current stub. Outlines: A and D.</p>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="step" id="s3" aria-labelledby="h3s">
+    <div class="cap">
+      <span class="num">03 · Simulate the sink</span>
+      <h2 id="h3s">From pressure to depth</h2>
+      <p>Every sensor is passed through that bed's curve, turning the pressure map into a depth map of how far the body sinks.</p>
+      <p>The algorithm then finds the shoulders and hips as the heaviest rows of depth, centers a nine-cell spine band on the body's center of pressure, and runs it from the base of the neck to the hips.</p>
+      <p class="how">Change <i>Mattress</i> and watch the hips sink past the shoulders on the softer beds.</p>
+    </div>
+    <div class="vis">
+      <figure class="card" style="margin:0">
+        <div class="card-hd"><h3>Depth, with landmarks found by the algorithm</h3><canvas id="lD" role="img" aria-label="Depth color scale from 0 to 2.5 inches"></canvas></div>
+        <div class="cw"><canvas id="cD" role="img" aria-label="Depth map with detected shoulder and hip lines and the spine band"></canvas></div>
+        <p class="hv" id="hv3">Hover the map to read a cell</p>
+        <div class="stats" id="st3"></div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="step" id="s4" aria-labelledby="h4s">
+    <div class="cap">
+      <span class="num">04 · Validate the spine</span>
+      <h2 id="h4s">Does the bed hold a neutral spine?</h2>
+      <p>At each step down the band, the spine depth is the median of a 9 × 9 cell window (4.5 inches square), which ignores the ribs and the gap under the lumbar arch.</p>
+      <p>That curve is compared with the person's neutral spine, measured standing, using dynamic time warping, which pairs matching points even where one curve is stretched. The distance becomes a match score from 0 to 100: 100 means the spine stays within the repeatability of the neutral measurement; 0 means it has drifted well out of shape.</p>
+      <p class="how">The neutral curve belongs to the person. It changes with <i>Body</i>, never with the bed. <i>Drag the blue point</i> to try every stub size in between the prototypes.</p>
+    </div>
+    <div class="vis">
+      <div class="duo">
+        <figure class="card" style="margin:0">
+          <div class="card-hd"><h3>Spine on this bed vs neutral</h3></div>
+          <div class="cw"><canvas id="cS" role="img" aria-label="Spine curve extracted from the depth map against the person's neutral curve, with the dynamic time warping pairs"></canvas></div>
+          <p class="key">Solid: spine on this bed. Dashed: neutral. Grey ties: DTW pairs.</p>
+        </figure>
+        <figure class="card" style="margin:0">
+          <div class="card-hd"><h3>Match score across stub sizes</h3><span class="hint">↔ drag the point</span></div>
+          <div class="cw"><canvas id="cF" tabindex="0" role="slider" aria-label="Base stub size. Drag along the match curve or use the arrow keys" aria-valuemin="0" aria-valuemax="100" aria-valuenow="33"></canvas><span class="pulse" id="pulse"></span></div>
+          <p class="key">Dots: the four tested prototypes. Hollow diamond: the best uniform stub. Orange line: the generated zoned bed, which mixes stub sizes, so it sits above the curve rather than on it.</p>
+        </figure>
+      </div>
+      <div class="stats" id="st4" style="margin:0"></div>
+    </div>
+  </section>
+
+  <section class="step" id="s5" aria-labelledby="h5s">
+    <div class="cap">
+      <span class="num">05 · Size every stub</span>
+      <h2 id="h5s">A rule for every stub</h2>
+      <p>The rule starts from a base stub size, the bed's softest setting. From there each stub grows with the pressure above it, until the load limit of 45 mmHg.</p>
+      <p>Past the limit a stub cannot usefully grow any more, so the extra load is shared out: stubs around it are raised toward the limit size, over a radius that widens the further the pressure went past it.</p>
+      <p class="how">Stub sizes are a share of the largest stub that fits a one-inch cell. The tested prototypes run from 12% (A) to 62% (D); the base for the final bed is chosen in step 07.</p>
+    </div>
+    <div class="vis">
+      <figure class="card" style="margin:0">
+        <div class="card-hd"><h3>Stub size against local pressure</h3></div>
+        <div class="cw"><canvas id="cN" role="img" aria-label="Stub size rule: stubs grow with pressure up to the 45 mmHg load limit and then hold their size; the whole row grows from bed A to bed D"></canvas></div>
+      </figure>
+      <figure class="card" style="margin:0">
+        <div class="card-hd"><h3>Load spreading past the limit</h3></div>
+        <div class="cw"><canvas id="cR" role="img" aria-label="A row of stubs under a pressure peak: stubs over the limit are held at the limit size, and their neighbours are raised toward it"></canvas></div>
+        <p class="key">Bars: pressure above each stub. Solid: the size its own pressure gives. Pale halo: size added by load spreading. Ringed: over the limit.</p>
+      </figure>
+    </div>
+  </section>
+
+  <section class="step" id="s6" aria-labelledby="h6s">
+    <div class="cap">
+      <span class="num">06 · Shape the firmness</span>
+      <h2 id="h6s">The heat map, built in gel</h2>
+      <p>Applied at every wall intersection, the rule turns the heat map into a mattress: 81 × 33 stubs at one-inch pitch, each sized for the body above it.</p>
+      <p>The grid itself never moves. Only the stubs change: smaller where the bed should give, larger where it has to hold. This body-shaped grid fits one sleeper in one position, so it is the input to the final step, not the product.</p>
+      <p class="how">Rings mark stubs over the load limit. The pale halo around them is size added by load spreading. Hover any stub.</p>
+    </div>
+    <div class="vis">
+      <figure class="card" style="margin:0">
+        <div class="card-hd"><h3>Generated gel grid, body-shaped</h3></div>
+        <div class="cw"><canvas id="cG" role="img" aria-label="Full mattress gel grid at one inch pitch with each stub sized by base firmness and local pressure, so the body appears as larger stubs"></canvas></div>
+        <p class="hv" id="hv6">Hover a stub</p>
+        <div class="stats" id="st6"></div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="step" id="s7" aria-labelledby="h7s">
+    <div class="cap">
+      <span class="num">07 · Zone and validate the bed</span>
+      <h2 id="h7s">The result: a zoned bed</h2>
+      <p>For a bed that can be molded and does not depend on exactly where someone lies, each column across the mattress takes the 90th percentile of its 33 stub sizes. The body shape becomes head-to-foot zones.</p>
+      <p>Then the loop closes. The zoned bed is put back through the simulation, a new spine curve is extracted and scored, and the base stub is swept until the zoned bed scores best. That bed is the design.</p>
+      <p class="how">This section always shows the generated zoned bed for the selected body. Choose <i>Generated</i> in the bar to see every map above on it.</p>
+    </div>
+    <div class="vis">
+      <figure class="card" style="margin:0">
+        <div class="card-hd"><h3 id="zTitle">Generated zoned bed</h3></div>
+        <div class="cw"><canvas id="cZ" role="img" aria-label="The generated zoned bed: each head-to-foot column uses the 90th percentile stub size of the body-shaped grid, with a strip chart of the column sizes above"></canvas></div>
+        <p class="hv" id="hv7">Hover a column</p>
+        <div class="stats" id="st7"></div>
+      </figure>
+      <div class="duo">
+        <figure class="card" style="margin:0">
+          <div class="card-hd"><h3>Spine on the zoned bed vs neutral</h3></div>
+          <div class="cw"><canvas id="cZS" role="img" aria-label="Spine curve on the zoned bed against the person's neutral curve"></canvas></div>
+          <p class="key">Solid: spine on the zoned bed. Dashed: neutral.</p>
+        </figure>
+        <figure class="card" style="margin:0">
+          <div class="card-hd"><h3>Validation: match score by bed</h3></div>
+          <div class="cw"><canvas id="cB" role="img" aria-label="Match scores for prototypes A to D, the best uniform stub size, and the generated zoned bed"></canvas></div>
+          <p class="key">Same body, same scoring. Only the bed changes.</p>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="method" id="method" aria-labelledby="hm">
+    <span class="num">Method</span>
+    <h2 id="hm">How the numbers are made</h2>
+    <ol>
+      <li><b>Pressure map</b><p>Supine XSensor capture, 64 × 160 sensors at 0.5 in pitch. On this page each body part is lowered into the bed until the pressure under it carries its weight.</p></li>
+      <li><b>Depth map</b><p>Each cell's pressure is converted with the prototype's pressure–displacement curve: <code>d = f<sub>bed</sub>(p)</code>.</p></li>
+      <li><b>Landmarks</b><p>Depth is summed across each row. Shoulders are the heaviest row in 14–36% of body length; hips the heaviest in 42–62%.</p></li>
+      <li><b>Spine band and curve</b><p>Nine columns centered on the center of pressure, from 0.2 × the shoulder–hip span above the shoulders down to the hips. Each point is the median depth of a 9 × 9 window, then the curve is mean-centered.</p></li>
+      <li><b>Neutral spine</b><p>The participant's standing spine profile from neck to sacrum, resampled to 60 points and mean-centered.</p></li>
+      <li><b>Dynamic time warping</b><p>Cost <code>|a<sub>i</sub> − b<sub>j</sub>|</code>; distance is the total cost of the best alignment divided by its length, in inches.</p></li>
+      <li><b>Match score</b><p><code>100 × (0.38 F − DTW) / (0.20 F)</code>, clamped to 0–100, where F is the distance a perfectly flat spine would score against the same neutral curve. Below 0.18 F a curve is within measurement repeatability and scores 100; at 0.38 F or more it scores 0.</p></li>
+      <li><b>Best uniform stub</b><p>21 uniform stub sizes from A to D are simulated; the best is refined with a parabola through the top three. Its pressure map feeds the stub rule.</p></li>
+      <li><b>Stub rule</b><p><code>s = base + 0.35 × min(p, 45) / 80</code>. A stub over 45 mmHg raises its neighbours within <code>r = 1 + (p − 45) / 12</code> in toward the limit size, by <code>1 − distance / r</code>.</p></li>
+      <li><b>Zoning</b><p>For each of the 81 columns, the 90th percentile of its 33 stub sizes is applied to the whole column.</p></li>
+      <li><b>Stub size to stiffness</b><p>The prototypes tie stub size to stiffness: <code>s = 12% + 50% × t</code>, A at <code>t = 0</code>, D at <code>t = 1</code>. Each zone's stub size sets that column's pressure–displacement curve the same way.</p></li>
+      <li><b>Validating the zoned bed</b><p>The body is re-simulated on the zoned bed and scored with the same DTW match. The base stub is swept from A to D and refined; the best-scoring zoned bed is the result.</p></li>
+    </ol>
+    <p class="datanote"><b>Representative data.</b> The study data is proprietary to Purple Innovation, LLC and is not shown here. The bodies, maps, curves and scores on this page are generated so the method can be explored; they do not describe any real participant or product.</p>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Dhyey Acharya · Computational validation · 2026</span>
+    <span><a href="https://dhyeyacharya.github.io/lab/">Project 01 · Shell perforation study</a> &nbsp;·&nbsp; <a href="https://dhyey-acharya.com">All work</a></span>
+  </div>
+</footer>
+
+<script>
+(function () {
+"use strict";
+const R = 160, C = 64, PITCH = 0.5, YM = 16, X0 = 3;
+const LBF = 0.0193368 * PITCH * PITCH;
+const BODIES = [
+  { k: 'Petite', H: 61, W: 115, sp: [0.50, 0.30, 0.62, 0.74, 0.70] },
+  { k: 'Average', H: 67, W: 165, sp: [0.55, 0.30, 0.50, 0.72, 0.70] },
+  { k: 'Tall', H: 74, W: 185, sp: [0.68, 0.28, 0.40, 0.70, 0.66] },
+  { k: 'Large', H: 70, W: 250, sp: [0.52, 0.32, 0.56, 0.73, 0.78] }
+];
+const M = { d1: 0.25, dmax: 3.0, pb0: 6, pb1: 4, s0: 20, s1: 85, A: 1.3, sc: 1.1, gl: 0.5 };
+const WT = { head: 0.08, thorax: 0.30, pelvis: 0.30, uarm: 0.022, farm: 0.013, hand: 0.005, thigh: 0.06, calf: 0.04, heel: 0.02 };
+function bedAt(t) { return { t, pb: M.pb0 + M.pb1 * t, s: M.s0 + M.s1 * t }; }
+// a zoned bed: one stiffness per sensor row (head-to-foot position); BK picks the bed under cell k
+function bedRows(tRow) { return { zoned: true, rows: tRow.map(bedAt) }; }
+const BK = (bed, k) => bed.zoned ? bed.rows[(k / C) | 0] : bed;
+function depthOf(p, b) {
+  if (p <= 0.5) return 0;
+  return p < b.pb ? M.d1 * p / b.pb : M.d1 + (M.dmax - M.d1) * (1 - Math.exp(-(p - b.pb) / b.s));
+}
+function pressOf(d, b) {
+  if (d <= 0) return 0;
+  if (d < M.d1) return b.pb * d / M.d1;
+  const q = Math.min(0.995, (d - M.d1) / (M.dmax - M.d1));
+  return b.pb - b.s * Math.log(1 - q);
+}
+function rng(seed) {
+  return function () {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function Nprof(s, q) { return q[0] * Math.exp(-(((s - q[1]) / 0.2) ** 2)) - q[2] * Math.exp(-(((s - q[3]) / 0.13) ** 2)) + q[4] * Math.exp(-(((s - 1) / 0.1) ** 2)); }
+function nmax(q) { let m = -1e9; for (let i = 0; i <= 200; i++) m = Math.max(m, Nprof(i / 200, q)); return m; }
+const cx = r => (r + 0.5) * PITCH, cy = c => (c + 0.5) * PITCH;
+function lerpTab(tab, f) {
+  if (f <= tab[0][0]) return tab[0][1];
+  for (let i = 1; i < tab.length; i++) if (f <= tab[i][0]) { const a = tab[i - 1], b = tab[i]; return a[1] + (b[1] - a[1]) * (f - a[0]) / (b[0] - a[0]); }
+  return tab[tab.length - 1][1];
+}
+function buildBody(body, bi) {
+  const H = body.H, hs = H / 67, bf = Math.sqrt((body.W / H) / (165 / 67)), gf = bf;
+  const fx = f => X0 + f * H;
+  const segs = [];
+  const rnd = rng(500 + bi * 13);
+  const jit = a => 1 + a * (rnd() - 0.5);
+  function addSeg(name, wt, x0, x1, y0, y1, hfn, extra) {
+    const idx = [], hh = [], bl = [], pt = [];
+    const r0 = Math.max(0, Math.floor(x0 / PITCH)), r1 = Math.min(R - 1, Math.ceil(x1 / PITCH));
+    const c0 = Math.max(0, Math.floor(y0 / PITCH)), c1 = Math.min(C - 1, Math.ceil(y1 / PITCH));
+    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+      const v = hfn(cx(r), cy(c));
+      if (v == null || !(v < 3.2)) continue;
+      idx.push(r * C + c); hh.push(v);
+      if (extra) { const e = extra(cx(r), cy(c)); bl.push(e[0]); pt.push(e[1]); }
+    }
+    segs.push({ name, wt: wt * body.W, idx: Int32Array.from(idx), h: Float32Array.from(hh), bl: extra ? Float32Array.from(bl) : null, pt: extra ? Uint8Array.from(pt) : null });
+  }
+  function capsule(P0, P1, r0, r1, prof) {
+    const dx = P1[0] - P0[0], dy = P1[1] - P0[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L;
+    return (X, Y) => {
+      const qx = X - P0[0], qy = Y - P0[1], u = qx * ux + qy * uy, v = Math.abs(-qx * uy + qy * ux);
+      const f = Math.max(0, Math.min(1, u / L)), r = r0 + (r1 - r0) * f;
+      const e = u < 0 ? -u : u > L ? u - L : 0;
+      const q = 1 - (v / r) ** 2 - (e / r) ** 2;
+      if (q <= 0) return null;
+      return r * (1 - Math.sqrt(q)) + (prof ? prof(f) : 0);
+    };
+  }
+  function cap(Xc, Yc, Rr, rx, ry) {
+    return (X, Y) => {
+      const d2 = ((X - Xc) / rx) ** 2 + ((Y - Yc) / ry) ** 2;
+      if (d2 >= 1) return null;
+      return Rr * (1 - Math.sqrt(1 - d2));
+    };
+  }
+  const g = (x, y, X, Y, sx, sy) => Math.exp(-(((x - X) / sx) ** 2) - (((y - Y) / sy) ** 2));
+  addSeg('head', WT.head, fx(0.0) - 1, fx(0.14), YM - 5, YM + 5, cap(fx(0.072), YM, 3.3 * Math.sqrt(hs), 3.4 * Math.sqrt(hs), 3.0 * Math.sqrt(hs)));
+  const XC7 = fx(0.17), XS2 = fx(0.53), SPq = body.sp, NMAX = nmax(SPq);
+  const wTab = [[0.13, 1.9], [0.155, 2.5], [0.168, 4.6], [0.183, 6.6], [0.21, 7.1], [0.26, 6.9], [0.33, 6.2], [0.40, 5.6], [0.45, 6.3], [0.50, 7.1], [0.54, 7.2], [0.575, 6.3], [0.60, 4.6]];
+  const zb = X => {
+    if (X < XC7) { const s0 = M.A * (NMAX - Nprof(0, SPq)); const k = (XC7 - X) / (XC7 - fx(0.13)); return s0 + 0.9 * Math.pow(Math.max(0, k), 1.4); }
+    if (X > XS2) { const s1 = M.A * (NMAX - Nprof(1, SPq)); return s1 + 0.11 * (X - XS2) ** 2; }
+    return M.A * (NMAX - Nprof((X - XC7) / (XS2 - XC7), SPq));
+  };
+  const scapY = 3.4 * bf, gluY = 2.9 * bf;
+  addSeg('trunk', 0, fx(0.13), fx(0.62), YM - 9 * bf, YM + 9 * bf, (X, Y) => {
+    const f = (X - X0) / H; if (f < 0.13 || f > 0.62) return null;
+    const a = lerpTab(wTab, f) * bf * (f > 0.44 ? Math.pow(body.W / 165, 0.1) : 1), dy = Y - YM;
+    if (Math.abs(dy) >= a) return null;
+    const b = (f < 0.35 ? 0.38 : f < 0.45 ? 0.38 + 0.12 * (f - 0.35) / 0.1 : 0.5) * a;
+    const lw = f > 0.35 && f < 0.5 ? Math.sin(Math.PI * (f - 0.35) / 0.15) : 0;
+    const zf = 1 - 0.6 * lw * Math.min(1, Math.pow(Math.abs(dy) / a, 1.2) * 1.4);
+    let h = b * (1 - Math.sqrt(1 - (dy / a) ** 2)) + zb(X) * zf;
+    h -= M.sc * g(X, Math.abs(dy), fx(0.215), scapY, 2.6 * hs, 2.0 * bf);
+    h -= 0.45 * g(X, dy, fx(0.505), 0, 1.5 * hs, 1.3);
+    h -= M.gl * g(X, Math.abs(dy), fx(0.535), gluY, 2.6 * hs, 2.4 * bf);
+    if (f > 0.19 && f < 0.36) h += 0.1 * Math.exp(-((dy / 0.9) ** 2));
+    return h;
+  }, (X) => {
+    const f = (X - X0) / H, w = Math.max(0, Math.min(1, (f - 0.37) / 0.10));
+    return [w, f < 0.42 ? 0 : 1];
+  });
+  for (const sd of [-1, 1]) {
+    const ja = jit(0.08), jb = jit(0.08);
+    const sh = [fx(0.18), YM + sd * 6.6 * bf], el = [fx(0.355), YM + sd * 9.6 * bf * ja], wr = [fx(0.475), YM + sd * 10.9 * bf * ja], ft = [fx(0.545), YM + sd * 11.5 * bf * ja];
+    addSeg('uarm', WT.uarm, Math.min(sh[0], el[0]) - 3, Math.max(sh[0], el[0]) + 3, Math.min(sh[1], el[1]) - 3, Math.max(sh[1], el[1]) + 3,
+      (X, Y) => { const v = capsule(sh, el, 1.75 * gf, 1.45 * gf, f => 0.25 * (1 - f) * (1 - f))(X, Y); if (v == null) return null; return v - 0.3 * g(X, Y, el[0] - 0.6, el[1], 0.9, 0.9); });
+    addSeg('farm', WT.farm, el[0] - 3, wr[0] + 3, Math.min(el[1], wr[1]) - 3, Math.max(el[1], wr[1]) + 3, capsule(el, wr, 1.35 * gf, 1.0 * gf, f => 0.15 * f));
+    addSeg('hand', WT.hand, wr[0] - 1, ft[0] + 4.5, Math.min(wr[1], ft[1]) - 3.5, Math.max(wr[1], ft[1]) + 3.5, (X, Y) => {
+      const palmC = [wr[0] + 1.6, wr[1] + sd * 0.2];
+      let best = cap(palmC[0], palmC[1], 0.55, 1.9, 1.5)(X, Y);
+      const ang = [-0.42, -0.14, 0.14, 0.42], len = [2.6, 3.0, 2.9, 2.4];
+      for (let i = 0; i < 4; i++) {
+        const a0 = ang[i] * sd, base = [palmC[0] + 1.5, palmC[1] + (i - 1.5) * 0.55 * sd], tip = [base[0] + len[i] * Math.cos(a0), base[1] + len[i] * Math.sin(a0) * 1];
+        const v = capsule(base, tip, 0.33, 0.28, f => 0.05 + 0.1 * f)(X, Y);
+        if (v != null && (best == null || v < best)) best = v;
+      }
+      const tb = [palmC[0] - 0.4, palmC[1] - sd * 1.3], tt = [tb[0] + 1.6, tb[1] - sd * 1.4];
+      const v = capsule(tb, tt, 0.36, 0.3, f => 0.12 + 0.1 * f)(X, Y);
+      if (v != null && (best == null || v < best)) best = v;
+      return best;
+    });
+    const hip = [fx(0.54), YM + sd * 3.2 * bf], kn = [fx(0.735), YM + sd * 4.0 * bf * jb], an = [fx(0.935), YM + sd * 5.0 * bf * jb], he = [fx(0.972), YM + sd * 5.1 * bf * jb];
+    addSeg('thigh', WT.thigh, hip[0] - 3, kn[0] + 3, Math.min(hip[1], kn[1]) - 4.5, Math.max(hip[1], kn[1]) + 4.5, capsule(hip, kn, 3.1 * gf, 2.3 * gf, f => 0.35 * (1 - f) + 1.1 * Math.max(0, f - 0.78) ** 2 / 0.05));
+    addSeg('calf', WT.calf, kn[0] - 1, an[0] + 2, Math.min(kn[1], an[1]) - 3.5, Math.max(kn[1], an[1]) + 3.5, capsule([kn[0] + 0.8, kn[1] + sd * 0.2 * bf], an, 2.1 * gf, 1.3 * gf, f => 0.9 * ((f - 0.33) / 0.67) ** 2 + (f < 0.12 ? 0.6 * (0.12 - f) / 0.12 : 0) + (f > 0.8 ? 1.5 * (f - 0.8) : 0)));
+    addSeg('heel', WT.heel, he[0] - 2, he[0] + 2, he[1] - 2, he[1] + 2, cap(he[0], he[1], 1.25, 1.2, 1.05));
+  }
+  return { segs, body, bi };
+}
+function force(seg, s, bed) {
+  let F = 0;
+  for (let i = 0; i < seg.h.length; i++) { const d = s - seg.h[i]; if (d > 0) F += pressOf(d, BK(bed, seg.idx[i])); }
+  return F * LBF;
+}
+function solve(seg, bed) {
+  let lo = 0, hi = 6;
+  for (let it = 0; it < 26; it++) { const mid = (lo + hi) / 2; if (force(seg, mid, bed) > seg.wt) hi = mid; else lo = mid; }
+  return (lo + hi) / 2;
+}
+function solveTrunk(seg, bed, body) {
+  const Wt = WT.thorax * body.W, Wp = WT.pelvis * body.W;
+  let st = 1, sp = 1;
+  const Fpart = (part, s_t, s_p) => { let F = 0; for (let i = 0; i < seg.h.length; i++) { if (seg.pt[i] !== part) continue; const s = s_t * (1 - seg.bl[i]) + s_p * seg.bl[i], d = s - seg.h[i]; if (d > 0) F += pressOf(d, BK(bed, seg.idx[i])); } return F * LBF; };
+  for (let k = 0; k < 5; k++) {
+    let lo = 0, hi = 6; for (let it = 0; it < 24; it++) { const m = (lo + hi) / 2; if (Fpart(0, m, sp) > Wt) hi = m; else lo = m; } st = (lo + hi) / 2;
+    lo = 0; hi = 6; for (let it = 0; it < 24; it++) { const m = (lo + hi) / 2; if (Fpart(1, st, m) > Wp) hi = m; else lo = m; } sp = (lo + hi) / 2;
+  }
+  return [st, sp];
+}
+const GEO = {};
+function pressure(body, t, bi) {
+  const geo = GEO[bi] || (GEO[bi] = buildBody(body, bi));
+  const bed = Array.isArray(t) ? bedRows(t) : bedAt(t), P = new Float32Array(R * C), sinks = {};
+  for (const seg of geo.segs) {
+    if (seg.name === 'trunk') {
+      const [st, sp] = solveTrunk(seg, bed, body); sinks.thorax = st; sinks.pelvis = sp;
+      for (let i = 0; i < seg.h.length; i++) { const s = st * (1 - seg.bl[i]) + sp * seg.bl[i], p = pressOf(s - seg.h[i], BK(bed, seg.idx[i])); const k = seg.idx[i]; if (p > P[k]) P[k] = p; }
+    } else {
+      const s = solve(seg, bed); sinks[seg.name] = s;
+      for (let i = 0; i < seg.h.length; i++) { const p = pressOf(s - seg.h[i], BK(bed, seg.idx[i])); const k = seg.idx[i]; if (p > P[k]) P[k] = p; }
+    }
+  }
+  const rnd = rng(1000 + bi * 7);
+  for (let k = 0; k < R * C; k++) { let v = P[k] * (0.95 + 0.1 * rnd()); P[k] = v < 1.5 ? 0 : v; }
+  P.sinks = sinks;
+  return P;
+}
+function neutralCurve(n, body) { const o = []; for (let i = 0; i < n; i++) o.push(M.A * Nprof(i / (n - 1), body.sp)); return o; }
+function analyse(P, t, win, body, opt) {
+  opt = opt || {};
+  const bed = Array.isArray(t) ? bedRows(t) : bedAt(t), D = new Float32Array(R * C), rs = new Float32Array(R);
+  for (let k = 0; k < R * C; k++) D[k] = depthOf(P[k], BK(bed, k));
+  let first = -1, last = -1, sx = 0, sy = 0, sw = 0, peakP = 0, maxD = 0;
+  for (let r = 0; r < R; r++) {
+    for (let c = 0; c < C; c++) { const k = r * C + c; rs[r] += D[k]; sx += r * P[k]; sy += c * P[k]; sw += P[k]; if (P[k] > peakP) peakP = P[k]; if (D[k] > maxD) maxD = D[k]; }
+    if (rs[r] > 0) { if (first < 0) first = r; last = r; }
+  }
+  const len = last - first, c0 = Math.round(sy / sw);
+  const am = (a, b) => { let m = a; for (let r = a; r <= b; r++) if (rs[r] > rs[m]) m = r; return m; };
+  const sh = am(first + Math.round(0.14 * len), first + Math.round(0.36 * len)), hp = am(first + Math.round(0.42 * len), first + Math.round(0.62 * len));
+  const span = hp - sh, top = Math.round(sh + (opt.ta != null ? opt.ta : -0.2) * span), bot = Math.round(hp + (opt.ba != null ? opt.ba : 0.0) * span);
+  const h = (win - 1) / 2, raw = [];
+  for (let r = top; r <= bot; r++) {
+    const vals = [];
+    for (let rr = r - h; rr <= r + h; rr++) for (let c = c0 - h; c <= c0 + h; c++) if (rr >= 0 && rr < R && c >= 0 && c < C) vals.push(D[rr * C + c]);
+    vals.sort((a, b) => a - b); raw.push(vals[vals.length >> 1]);
+  }
+  const ctr = a => { const m = a.reduce((x, y) => x + y, 0) / a.length; return a.map(v => v - m); };
+  const a = ctr(raw), b = ctr(neutralCurve(60, body)), N = a.length, MM = b.length, cost = new Float64Array(N * MM);
+  for (let i = 0; i < N; i++) for (let j = 0; j < MM; j++) {
+    let pv = 0;
+    if (i || j) pv = Math.min(i ? cost[(i - 1) * MM + j] : Infinity, j ? cost[i * MM + j - 1] : Infinity, i && j ? cost[(i - 1) * MM + j - 1] : Infinity);
+    cost[i * MM + j] = Math.abs(a[i] - b[j]) + pv;
+  }
+  const path = [[N - 1, MM - 1]]; let i = N - 1, j = MM - 1;
+  while (i || j) {
+    let bt = [Infinity, 0, 0];
+    if (i && j && cost[(i - 1) * MM + j - 1] < bt[0]) bt = [cost[(i - 1) * MM + j - 1], i - 1, j - 1];
+    if (i && cost[(i - 1) * MM + j] < bt[0]) bt = [cost[(i - 1) * MM + j], i - 1, j];
+    if (j && cost[i * MM + j - 1] < bt[0]) bt = [cost[i * MM + j - 1], i, j - 1];
+    i = bt[1]; j = bt[2]; path.push([i, j]);
+  }
+  return { P, D, sh, hp, top, bot, c0, cop: [sx / sw, sy / sw], curve: a, raw, neutral: b, path, score: cost[N * MM - 1] / path.length, peakP, maxD, t };
+}
+
+
+
+// ---------- model glue ----------
+const TT = [0, 1 / 3, 2 / 3, 1], LET = ['A', 'B', 'C', 'D'], NI = 81, NJ = 33;
+const Q0 = 0.18, Q1 = 0.38;   // score anchors as a share of the flat-spine DTW: 100 at or below Q0, 0 at or above Q1
+const SB0 = 0.12, SB1 = 0.50, SG = 0.35, PLIM = 45, SPR = 12;   // stub size = SB0 + SB1·t for the tested prototypes (A 12%, D 62%)
+const baseOf = t => SB0 + SB1 * t;
+const capOf = t => Math.min(1, baseOf(t) + SG * PLIM / 80);
+const ownOf = (t, p) => Math.min(capOf(t), baseOf(t) + SG * Math.min(p, PLIM) / 80);
+const radOf = p => 1 + (p - PLIM) / SPR;
+// zoned bed: column i (inches from the head end) gets the stiffness that its stub size gives on the prototypes
+function zoneRows(Z) { const tr = []; for (let r = 0; r < R; r++) { const i = Math.min(NI - 1, Math.round((r + 0.5) * PITCH)); tr.push(Math.max(0, (Z[i] - SB0) / SB1)); } return tr; }
+
+function evalAt(bi, t) { return analyse(pressure(BODIES[bi], t, bi), t, 9, BODIES[bi]); }
+const cache = {};
+function sweep(bi) {
+  if (cache[bi]) return cache[bi];
+  // sample 21 stub sizes plus the four tested prototypes, so the curve passes through every plotted point
+  const pts = []; let yl = 1e9, yh = -1e9, ref = 0;
+  const add = t => { if (pts.some(q => Math.abs(q.t - t) < 1e-6)) return; const a = evalAt(bi, t); pts.push({ t, d: a.score }); a.curve.concat(a.neutral).forEach(v => { if (v < yl) yl = v; if (v > yh) yh = v; }); return a; };
+  const a0 = evalAt(bi, 0); ref = a0.neutral.reduce((u, v) => u + Math.abs(v), 0) / a0.neutral.length;
+  for (let k = 0; k <= 20; k++) add(k / 20);
+  TT.forEach(add);
+  const sc = d => 100 * Math.max(0, Math.min(1, (Q1 * ref - d) / ((Q1 - Q0) * ref)));
+  // parabolic refinement around the best uniform sample
+  const grid = []; for (let k = 0; k <= 20; k++) grid.push(sc(pts[k].d));
+  let k = 0; grid.forEach((v, n) => { if (v > grid[k]) k = n; });
+  if (k > 0 && k < 20) { const den = grid[k - 1] - 2 * grid[k] + grid[k + 1]; if (den < 0) add((k + 0.5 * (grid[k - 1] - grid[k + 1]) / den) / 20); }
+  pts.sort((p, q) => p.t - q.t);
+  const ts = pts.map(p => p.t), ss = pts.map(p => sc(p.d));
+  let g = 0; ss.forEach((v, n) => { if (v > ss[g] + 1e-9) g = n; });
+  const tested = TT.map(t => ss[ts.findIndex(x => Math.abs(x - t) < 1e-6)]);
+  let bk = 0; tested.forEach((v, n) => { if (v > tested[bk]) bk = n; });
+  // the design: zone the stub rule's grid built from the best uniform bed's pressure map, re-simulate, re-score, sweep the base
+  const P0 = evalAt(bi, ts[g]).P;
+  const zEval = b => { const S = computeStubs({ P: P0 }, b), tRow = zoneRows(S.Z), a = evalAt(bi, tRow); return { b, S, tRow, a, s: sc(a.score) }; };
+  const zs = []; for (let n = 0; n <= 20; n++) zs.push(zEval(n / 20));
+  let zk = 0; zs.forEach((z, n) => { if (z.s > zs[zk].s) zk = n; });
+  let zone = zs[zk];
+  if (zk > 0 && zk < 20) { const y0 = zs[zk - 1].s, y1 = zs[zk].s, y2 = zs[zk + 1].s, den = y0 - 2 * y1 + y2; if (den < 0) { const z = zEval((zk + 0.5 * (y0 - y2) / den) / 20); if (z.s > zone.s) zone = z; } }
+  zone.a.curve.forEach(v => { if (v < yl) yl = v; if (v > yh) yh = v; });
+  zone.NPz = computeStubs(zone.a, zone.b).NP;
+  // mean stiffness under the body, to place the zoned bed on the uniform match curve
+  let tw = 0, wn = 0; for (let r = 0; r < R; r++) { let rs = 0; for (let c = 0; c < C; c++) rs += P0[r * C + c]; tw += zone.tRow[r] * rs; wn += rs; }
+  zone.tMean = wn ? tw / wn : zone.b; zone.tMin = Math.min(...zone.tRow); zone.tMax = Math.max(...zone.tRow);
+  let zmin = 1, zmax = 0, zi = 0; for (let i = 0; i < NI; i++) { if (zone.S.Z[i] < zmin) zmin = zone.S.Z[i]; if (zone.S.Z[i] > zmax) { zmax = zone.S.Z[i]; zi = i; } }
+  Object.assign(zone, { zmin, zmax, zi });
+  return (cache[bi] = { ts, ss, tg: ts[g], sg: ss[g], tested, best: bk, yl: yl - 0.08, yh: yh + 0.08, ref, sc, zone });
+}
+
+// stub sizes for every node: own size from local pressure, capped at the load limit, then load spreading
+function computeStubs(a, t) {
+  const P = a.P, NP = new Float32Array(NI * NJ), S = new Float32Array(NI * NJ), F = new Uint8Array(NI * NJ), Z = new Float32Array(NI);
+  for (let i = 0; i < NI; i++) for (let j = 0; j < NJ; j++) {
+    let sm = 0, n = 0;
+    for (const r of [2 * i - 1, 2 * i]) for (const c of [2 * j - 1, 2 * j]) if (r >= 0 && r < R && c >= 0 && c < C) { sm += P[r * C + c]; n++; }
+    NP[i * NJ + j] = n ? sm / n : 0;
+  }
+  const cap = capOf(t), src = [];
+  for (let k = 0; k < NI * NJ; k++) { S[k] = ownOf(t, NP[k]); if (NP[k] > PLIM) { F[k] = 2; src.push(k); } }
+  const OWN = S.slice();
+  for (const k of src) {
+    const i0 = Math.floor(k / NJ), j0 = k % NJ, rad = radOf(NP[k]), rr = Math.ceil(rad);
+    for (let di = -rr; di <= rr; di++) for (let dj = -rr; dj <= rr; dj++) {
+      const i = i0 + di, j = j0 + dj;
+      if (i < 0 || i >= NI || j < 0 || j >= NJ) continue;
+      const kk = i * NJ + j; if (F[kk] === 2) continue;
+      const d = Math.hypot(di, dj); if (d >= rad) continue;
+      const v = OWN[kk] + (cap - OWN[kk]) * (1 - d / rad);
+      if (v > S[kk] + 1e-6) { S[kk] = v; F[kk] = 1; }
+    }
+  }
+  let nSpread = 0, smin = 1, smax = 0;
+  for (let k = 0; k < NI * NJ; k++) { if (F[k] === 1) nSpread++; if (S[k] < smin) smin = S[k]; if (S[k] > smax) smax = S[k]; }
+  for (let i = 0; i < NI; i++) {
+    const v = []; for (let j = 0; j < NJ; j++) v.push(S[i * NJ + j]);
+    v.sort((x, y) => x - y);
+    const q = 0.9 * (v.length - 1), lo = Math.floor(q), f = q - lo;
+    Z[i] = v[lo] + f * (v[Math.min(lo + 1, v.length - 1)] - v[lo]);
+  }
+  return { NP, S, OWN, F, Z, cap, base: baseOf(t), nOver: src.length, nSpread, smin, smax };
+}
+
+// ---------- theme ----------
+const T = {};
+const hx = s => { s = s.trim(); if (s[0] !== '#') return [128, 128, 128]; if (s.length === 4) s = '#' + s[1] + s[1] + s[2] + s[2] + s[3] + s[3]; return [1, 3, 5].map(k => parseInt(s.slice(k, k + 2), 16)); };
+const rgb = c => 'rgb(' + c.join(',') + ')';
+function readTheme() {
+  const cs = getComputedStyle(document.documentElement), g = n => cs.getPropertyValue(n).trim();
+  T.dark = g('--mode') === 'dark';
+  ['bg', 'panel', 'ink', 'ink-2', 'muted', 'line', 'grid', 'dot', 'ax', 'node-off', 'accent', 'gen', 'accent-soft', 'gen-soft'].forEach(n => { T[n.replace('-', '')] = g('--' + n); });
+  T.fd = '11px ' + g('--font-data');
+  T.fb = '12px ' + g('--font-body');
+  T.fbm = '500 12px ' + g('--font-body');
+  T.XPAL = (T.dark ? ['#2a3cb8'] : ['#1b2a8f']).concat(['#1f48c9', '#2a6ae6', '#3b8ff0', '#4fb6f2', '#55d0d6', '#5fd99a', '#93e05c', '#d2e840', '#f6de33', '#f8b02b', '#f17826', '#e2401f', '#b8191b']).map(hx);
+  T.DPAL = (T.dark
+    ? ['#1a2350', '#1f2c6a', '#253686', '#2b41a3', '#3450c0', '#4a66d6', '#6580e0', '#839ae8', '#a3b5ef', '#c6d2f6']
+    : ['#e1e7fb', '#c9d3f7', '#adbdf2', '#90a6ec', '#738ee5', '#5676dd', '#3b5ed3', '#2747c9', '#1d37a0', '#142878']).map(hx);
+}
+const PMX = 80, DMX = 2.5;
+const mixc = (a, b, f) => a.map((v, i) => Math.round(v + (b[i] - v) * f));
+
+// ---------- canvas helpers ----------
+const $ = id => document.getElementById(id);
+function fit(cv, w, h) {
+  const d = window.devicePixelRatio || 1;
+  w = Math.max(10, Math.round(w)); h = Math.max(10, Math.round(h));
+  cv.width = Math.round(w * d); cv.height = Math.round(h * d); cv.style.width = w + 'px'; cv.style.height = h + 'px';
+  const c = cv.getContext('2d'); c.setTransform(d, 0, 0, d, 0, 0); c.clearRect(0, 0, w, h); return c;
+}
+const wOf = cv => Math.max(120, cv.parentElement.clientWidth || 600);
+function pill(ctx, text, x, y, align, col, bg) {
+  const tw = ctx.measureText(text).width, x0 = align === 'right' ? x - tw : align === 'center' ? x - tw / 2 : x;
+  ctx.fillStyle = bg || T.panel; ctx.globalAlpha = 0.9; ctx.fillRect(x0 - 3, y - 8, tw + 6, 16); ctx.globalAlpha = 1;
+  ctx.fillStyle = col; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(text, x0, y);
+}
+
+// ---------- state ----------
+const st = { bi: 1, m: 1, t: 1 / 3, a: null, s: null, used: false, hovP: null };
+const cur = () => sweep(st.bi).sc(st.a.score);
+const selCol = () => (st.m === 'G' ? T.gen : T.accent);
+function where(t) { const n = t * 3, k = Math.round(n); if (Math.abs(n - k) < 0.12) return 'at ' + LET[k]; const f = Math.floor(n); return 'between ' + LET[f] + ' and ' + LET[Math.min(f + 1, 3)]; }
+function label() { return st.m === 'G' ? 'generated zoned bed' : st.m === 'X' ? 'stub ' + where(st.t) : 'prototype ' + LET[st.m]; }
+const pct = v => Math.round(v * 100) + '%';
+
+// ---------- maps ----------
+function mapImage(arr, pal, mx, thr) {
+  const UP = 4, W = R * UP, H = C * UP, off = document.createElement('canvas'); off.width = W; off.height = H;
+  const o = off.getContext('2d'), img = o.createImageData(W, H), dt = img.data, nb = pal.length;
+  for (let X = 0; X < W; X++) {
+    let fr = (X + 0.5) / UP - 0.5, r0 = Math.floor(fr), fx = fr - r0; if (r0 < 0) { r0 = 0; fx = 0; } if (r0 > R - 2) { r0 = R - 2; fx = 1; }
+    for (let Y = 0; Y < H; Y++) {
+      let fc = (Y + 0.5) / UP - 0.5, c0 = Math.floor(fc), fy = fc - c0; if (c0 < 0) { c0 = 0; fy = 0; } if (c0 > C - 2) { c0 = C - 2; fy = 1; }
+      const k = r0 * C + c0, v = arr[k] * (1 - fx) * (1 - fy) + arr[k + C] * fx * (1 - fy) + arr[k + 1] * (1 - fx) * fy + arr[k + C + 1] * fx * fy;
+      if (v <= thr) continue;
+      const col = pal[Math.min(nb - 1, Math.floor(v / mx * nb))], q = (Y * W + X) * 4;
+      dt[q] = col[0]; dt[q + 1] = col[1]; dt[q + 2] = col[2]; dt[q + 3] = 255;
+    }
+  }
+  o.putImageData(img, 0, 0); return off;
+}
+function drawMap(cv, off, over) {
+  const w = wOf(cv), AXL = 26, AXB = 17, PT = 4, PR = 8, SC = (w - AXL - PR) / R, MH = C * SC, h = PT + MH + AXB, OX = AXL, OY = PT;
+  const ctx = fit(cv, w, h); cv._g = { OX, OY, SC };
+  ctx.fillStyle = T.dot;
+  const ds = SC > 3.2 ? 1.2 : 1;
+  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) ctx.fillRect(OX + (r + 0.5) * SC - ds / 2, OY + (c + 0.5) * SC - ds / 2, ds, ds);
+  ctx.imageSmoothingEnabled = true; ctx.drawImage(off, OX, OY, R * SC, MH);
+  ctx.strokeStyle = T.ax; ctx.lineWidth = 1; ctx.strokeRect(OX + 0.5, OY + 0.5, R * SC - 1, MH - 1);
+  ctx.font = T.fd; ctx.fillStyle = T.muted; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  (SC < 3 ? [1, 32, 64, 96, 128, 160] : [1, 16, 32, 48, 64, 80, 96, 112, 128, 144, 160]).forEach(n => { const x = OX + (n - 0.5) * SC; ctx.fillRect(x - 0.5, OY + MH, 1, 3); ctx.fillText(String(n), Math.min(x, OX + R * SC - 9), OY + MH + 4); });
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  [1, 16, 32, 48, 64].forEach(n => { const y = OY + MH - (n - 0.5) * SC; ctx.fillRect(OX - 3, y - 0.5, 3, 1); ctx.fillText(String(n), OX - 5, Math.max(OY + 5, Math.min(y, OY + MH - 5))); });
+  if (over) over(ctx, OX, OY, SC, MH);
+}
+function legend(cv, pal, mx, ticks, unit) {
+  const w = 214, h = 24, ctx = fit(cv, w, h), n = pal.length, bw = Math.floor(160 / n), x0 = w - bw * n - 4;
+  pal.forEach((c, i) => { ctx.fillStyle = rgb(c); ctx.fillRect(x0 + i * bw, 2, bw, 7); });
+  ctx.font = T.fd; ctx.fillStyle = T.muted; ctx.textBaseline = 'middle'; ctx.textAlign = 'right'; ctx.fillText(unit, x0 - 6, 6);
+  ctx.textBaseline = 'top';
+  ticks.forEach((tv, i) => { const x = x0 + tv / mx * bw * n; ctx.textAlign = i === 0 ? 'left' : i === ticks.length - 1 ? 'right' : 'center'; ctx.fillText(String(tv), x, 12); });
+}
+function drawPressure() {
+  const a = st.a;
+  drawMap($('cP'), st.offP, (ctx, OX, OY, SC) => {
+    const x = OX + (a.cop[0] + 0.5) * SC, y = OY + (a.cop[1] + 0.5) * SC;
+    ctx.strokeStyle = T.ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y, 6, 0, 7); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x - 10, y); ctx.lineTo(x + 10, y); ctx.moveTo(x, y - 10); ctx.lineTo(x, y + 10); ctx.stroke();
+    if (st.hovP && st.hovP.cv === 'cP') { ctx.strokeStyle = T.ink; ctx.lineWidth = 1; ctx.strokeRect(OX + st.hovP.r * SC, OY + st.hovP.c * SC, SC, SC); }
+  });
+}
+function drawDepth() {
+  const a = st.a;
+  drawMap($('cD'), st.offD, (ctx, OX, OY, SC, MH) => {
+    ctx.save(); ctx.setLineDash([3, 3]); ctx.strokeStyle = T.ink; ctx.lineWidth = 1; ctx.font = T.fb;
+    [[a.sh, 'shoulders', 'right'], [a.hp, 'hips', 'left']].forEach(L => {
+      const x = OX + (L[0] + 0.5) * SC; ctx.beginPath(); ctx.moveTo(x, OY + 18); ctx.lineTo(x, OY + MH); ctx.stroke();
+      pill(ctx, L[1], x + (L[2] === 'left' ? 5 : -5), OY + 10, L[2], T.ink);
+    });
+    ctx.setLineDash([]); ctx.lineWidth = 1.5; ctx.strokeStyle = T.ink;
+    ctx.strokeRect(OX + a.top * SC + 0.5, OY + (a.c0 - 4) * SC + 0.5, (a.bot - a.top + 1) * SC, 9 * SC);
+    pill(ctx, 'spine band', OX + a.top * SC, OY + (a.c0 + 5) * SC + 11, 'left', T.ink);
+    if (st.hovP && st.hovP.cv === 'cD') { ctx.lineWidth = 1; ctx.strokeRect(OX + st.hovP.r * SC, OY + st.hovP.c * SC, SC, SC); }
+    ctx.restore();
+  });
+}
+
+// ---------- 02: material ----------
+function drawPD() {
+  const cv = $('cC'), w = wOf(cv), h = Math.round(Math.min(300, Math.max(210, w * 0.42))), pl = 40, pr = 26, pt = 10, pb = 26, ctx = fit(cv, w, h), PM = 70, DM = 3;
+  const X = p => pl + p / PM * (w - pl - pr), Y = d => pt + (1 - d / DM) * (h - pt - pb);
+  cv._g = { pl, pr, w, PM };
+  ctx.font = T.fd; ctx.fillStyle = T.muted; ctx.textBaseline = 'middle'; ctx.textAlign = 'right';
+  [0, 1, 2, 3].forEach(d => { ctx.strokeStyle = d ? T.grid : T.ax; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(pl, Y(d)); ctx.lineTo(w - pr, Y(d)); ctx.stroke(); ctx.fillText(d + ' in', pl - 6, Y(d)); });
+  ctx.textBaseline = 'top';
+  [0, 10, 20, 30, 40, 50, 60].forEach(p => { ctx.textAlign = 'center'; ctx.fillText(String(p), X(p), h - pb + 6); });
+  ctx.textAlign = 'right'; ctx.fillText('mmHg', w - pr + 22, h - pb + 6);
+  ctx.save(); ctx.translate(10, pt + (h - pt - pb) / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.restore();
+  const curve = (t, col, lw, dash) => { const b = bedAt(t); ctx.setLineDash(dash || []); ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath(); for (let p = 0; p <= PM; p += 0.5) { const x = X(p), y = Y(depthOf(p, b)); p ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke(); ctx.setLineDash([]); };
+  TT.forEach(t => curve(t, T.ax, 1.25));
+  const labs = TT.map((t, n) => ({ y: Math.max(pt + 5, Y(depthOf(PM, bedAt(t)))), l: LET[n] })).sort((u, v) => u.y - v.y);
+  for (let k = 1; k < labs.length; k++) if (labs[k].y - labs[k - 1].y < 12) labs[k].y = labs[k - 1].y + 12;
+  ctx.fillStyle = T.muted; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; labs.forEach(o => ctx.fillText(o.l, X(PM) + 5, o.y));
+  const s = sweep(st.bi);
+  const z = s.zone, b0 = bedAt(z.tMin), b1 = bedAt(z.tMax);
+  ctx.fillStyle = T.gen; ctx.globalAlpha = 0.16; ctx.beginPath();
+  for (let p = 0; p <= PM; p += 0.5) { const x = X(p), y = Y(depthOf(p, b0)); p ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+  for (let p = PM; p >= 0; p -= 0.5) ctx.lineTo(X(p), Y(depthOf(p, b1)));
+  ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
+  curve(z.tMin, T.gen, 1.25, [4, 3]); curve(z.tMax, T.gen, 1.25, [4, 3]);
+  if (st.m !== 'G') curve(st.t, selCol(), 2.25);
+  // marker: pressure at the sacrum peak for this body on this bed
+  const hp = st.pdHover;
+  if (hp != null) {
+    const x = X(hp); ctx.setLineDash([2, 3]); ctx.strokeStyle = T.muted; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, pt); ctx.lineTo(x, h - pb); ctx.stroke(); ctx.setLineDash([]);
+    TT.forEach(t => { const y = Y(depthOf(hp, bedAt(t))); ctx.beginPath(); ctx.arc(x, y, 3, 0, 7); ctx.fillStyle = T.ax; ctx.fill(); });
+    const y = Y(depthOf(hp, bedAt(st.m === 'G' ? z.tMin : st.t))); ctx.beginPath(); ctx.arc(x, y, 4.5, 0, 7); ctx.fillStyle = selCol(); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = T.panel; ctx.stroke();
+  }
+  // legend
+  ctx.font = T.fb; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  const lg = [[T.gen, 'zoned bed range', [4, 3]], [T.ax, 'A–D tested', []]]; if (st.m !== 'G') lg.unshift([selCol(), 'current', []]);
+  let lx = pl + 10; const ly = pt + 10;
+  lg.forEach(L => { ctx.setLineDash(L[2]); ctx.strokeStyle = L[0]; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 16, ly); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = T.ink2; ctx.fillText(L[1], lx + 21, ly); lx += 30 + ctx.measureText(L[1]).width; });
+}
+function drawCell() {
+  const cv = $('cX'), w = wOf(cv), n = 3, P = Math.min((w - 24) / n, 170 / n), h = n * P + 40, ctx = fit(cv, w, h), ox = (w - n * P) / 2, oy = 8;
+  // gel walls
+  ctx.strokeStyle = T.nodeoff; ctx.lineWidth = Math.max(3, P * 0.09); ctx.lineCap = 'butt';
+  for (let i = 0; i <= n; i++) { ctx.beginPath(); ctx.moveTo(ox + i * P, oy); ctx.lineTo(ox + i * P, oy + n * P); ctx.stroke(); ctx.beginPath(); ctx.moveTo(ox, oy + i * P); ctx.lineTo(ox + n * P, oy + i * P); ctx.stroke(); }
+  const rOf = s => P * (0.03 + 0.55 * s);
+  for (let i = 0; i <= n; i++) for (let j = 0; j <= n; j++) {
+    const x = ox + i * P, y = oy + j * P;
+    const zz = sweep(st.bi).zone, sz = st.m === 'G' ? zz.zmin + (zz.zmax - zz.zmin) * i / n : baseOf(st.t);
+    ctx.beginPath(); ctx.arc(x, y, rOf(sz), 0, 7); ctx.fillStyle = selCol(); ctx.fill();
+    ctx.setLineDash([2, 2]); ctx.lineWidth = 1; ctx.strokeStyle = T.muted;
+    [0, 1].forEach(t => { ctx.beginPath(); ctx.arc(x, y, rOf(baseOf(t)), 0, 7); ctx.stroke(); });
+    ctx.setLineDash([]);
+  }
+  ctx.font = T.fd; ctx.fillStyle = T.muted; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.strokeStyle = T.muted; ctx.lineWidth = 1; const yb = oy + n * P + 12;
+  ctx.beginPath(); ctx.moveTo(ox, yb - 3); ctx.lineTo(ox, yb + 3); ctx.moveTo(ox, yb); ctx.lineTo(ox + P, yb); ctx.moveTo(ox + P, yb - 3); ctx.lineTo(ox + P, yb + 3); ctx.stroke();
+  ctx.fillText('1 in', ox + P / 2, yb + 4);
+  ctx.textAlign = 'right'; if (st.m !== 'G') ctx.fillText('base ' + pct(baseOf(st.t)), ox + n * P, yb + 4);
+}
+
+// ---------- 04: spine + match curve ----------
+function drawSpine() { spineChart($('cS'), st.a, selCol(), true); }
+function drawZSpine() { const z = sweep(st.bi).zone; spineChart($('cZS'), z.a, T.gen, false); }
+function spineChart(cv, a, col, ties) {
+  const s = sweep(st.bi), w = wOf(cv), h = 250, ctx = fit(cv, w, h), pl = 12, pr = 12, pt = 24, pb = 22, lo = s.yl, hi = s.yh;
+  const X = (i, n) => pl + i / (n - 1) * (w - pl - pr), Y = v => pt + (v - lo) / (hi - lo) * (h - pt - pb);
+  const N = a.curve.length, M2 = a.neutral.length;
+  ctx.strokeStyle = T.grid; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(pl, Y(0)); ctx.lineTo(w - pr, Y(0)); ctx.stroke();
+  if (ties) { ctx.strokeStyle = T.muted; ctx.globalAlpha = 0.45; ctx.lineWidth = 0.75; a.path.forEach((p, k) => { if (k % 3) return; ctx.beginPath(); ctx.moveTo(X(p[0], N), Y(a.curve[p[0]])); ctx.lineTo(X(p[1], M2), Y(a.neutral[p[1]])); ctx.stroke(); }); ctx.globalAlpha = 1; }
+  ctx.setLineDash([5, 4]); ctx.strokeStyle = T.ink2; ctx.lineWidth = 1.75; ctx.beginPath(); a.neutral.forEach((v, j) => { j ? ctx.lineTo(X(j, M2), Y(v)) : ctx.moveTo(X(j, M2), Y(v)); }); ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle = col; ctx.lineWidth = 2.5; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.beginPath(); a.curve.forEach((v, i) => { i ? ctx.lineTo(X(i, N), Y(v)) : ctx.moveTo(X(i, N), Y(v)); }); ctx.stroke();
+  ctx.font = T.fd; ctx.fillStyle = T.muted; ctx.textBaseline = 'bottom'; ctx.textAlign = 'left'; ctx.fillText('neck', pl, h); ctx.textAlign = 'right'; ctx.fillText('hips', w - pr, h);
+  ctx.textAlign = 'center'; ctx.fillText('deeper ↓', w / 2, h);
+  const xs = X(a.sh - a.top, N);
+  ctx.textBaseline = 'top'; ctx.fillStyle = T.ink2; ctx.font = T.fb; ctx.textAlign = 'center'; ctx.fillText('shoulders', Math.max(pl + 30, xs), 0);
+  ctx.strokeStyle = T.ax; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(xs, 16); ctx.lineTo(xs, 21); ctx.stroke();
+  if (!ties) { const sc = s.sc(a.score); ctx.font = T.fbm; ctx.fillStyle = col; ctx.textAlign = 'right'; ctx.fillText('match ' + sc.toFixed(0), w - pr, 0); }
+}
+function drawScores() {
+  const cv = $('cB'), s = sweep(st.bi), z = s.zone, w = wOf(cv), rows = [['A', s.tested[0], T.ax], ['B', s.tested[1], T.ax], ['C', s.tested[2], T.ax], ['D', s.tested[3], T.ax], ['Best uniform', s.sg, T.ink2], ['Zoned bed', z.s, T.gen]];
+  const rh = 34, top = 6, h = top + rows.length * rh + 22, ctx = fit(cv, w, h), pl = 96, pr = 34, X = v => pl + v / 100 * (w - pl - pr);
+  ctx.font = T.fd; ctx.textBaseline = 'top'; ctx.fillStyle = T.muted;
+  [0, 50, 100].forEach(v => { const x = X(v); ctx.strokeStyle = v ? T.grid : T.ax; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, top + rows.length * rh); ctx.stroke(); ctx.textAlign = 'center'; ctx.fillText(String(v), x, top + rows.length * rh + 6); });
+  rows.forEach((r, n) => {
+    const y = top + n * rh + 7, bh = rh - 14, last = n === rows.length - 1;
+    ctx.fillStyle = r[2]; ctx.fillRect(X(0), y, Math.max(2, X(r[1]) - X(0)), bh);
+    ctx.font = last ? T.fbm : T.fb; ctx.fillStyle = last ? T.gen : T.ink2; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(r[0], pl - 10, y + bh / 2);
+    ctx.font = last ? T.fbm : T.fd; ctx.textAlign = 'left'; ctx.fillStyle = last ? T.gen : T.ink2; ctx.fillText(r[1].toFixed(0), X(r[1]) + 6, y + bh / 2);
+  });
+}
+function fitGeom() { const cv = $('cF'), w = wOf(cv), h = 250, pl = 40, pr = 18, pt = 34, pb = 36; return { w, h, pl, pr, pt, pb, X: t => pl + t * (w - pl - pr) }; }
+function drawFit() {
+  const cv = $('cF'), s = sweep(st.bi), z = s.zone, g = fitGeom(), ctx = fit(cv, g.w, g.h), c = cur();
+  const ymin = Math.floor((Math.min(...s.ss) - 1) / 5) * 5, ymax = Math.min(100, Math.ceil((Math.max(z.s, ...s.ss) + 3) / 5) * 5), Y = v => g.pt + (1 - (v - ymin) / (ymax - ymin)) * (g.h - g.pt - g.pb);
+  const step = ymax - ymin > 30 ? 10 : 5;
+  ctx.font = T.fd; ctx.textBaseline = 'middle';
+  for (let v = ymin; v <= ymax; v += step) { const y = Y(v); ctx.strokeStyle = v === ymin ? T.ax : T.grid; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(g.pl, y); ctx.lineTo(g.w - g.pr, y); ctx.stroke(); ctx.fillStyle = T.muted; ctx.textAlign = 'right'; ctx.fillText(String(v), g.pl - 6, y); }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  TT.forEach((t, n) => { ctx.fillStyle = T.ink2; ctx.fillText(LET[n], g.X(t), g.h - g.pb + 6); });
+  ctx.fillStyle = T.muted; ctx.textBaseline = 'bottom'; ctx.textAlign = 'left'; ctx.fillText('softer', g.pl, g.h); ctx.textAlign = 'right'; ctx.fillText('firmer', g.w - g.pr, g.h); ctx.textAlign = 'center'; ctx.fillText('stub size', (g.pl + g.w - g.pr) / 2, g.h);
+  ctx.strokeStyle = T.ink2; ctx.lineWidth = 1.75; ctx.lineJoin = 'round'; ctx.beginPath(); s.ts.forEach((t, k) => { k ? ctx.lineTo(g.X(t), Y(s.ss[k])) : ctx.moveTo(g.X(t), Y(s.ss[k])); }); ctx.stroke();
+  const xg = g.X(s.tg), yg = Y(s.sg), yz = Y(z.s);
+  // the generated zoned bed is not a uniform stub size, so it shows as a level across the chart
+  ctx.setLineDash([5, 4]); ctx.strokeStyle = T.gen; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(g.pl, yz); ctx.lineTo(g.w - g.pr, yz); ctx.stroke(); ctx.setLineDash([]);
+  ctx.font = T.fbm; ctx.fillStyle = T.gen; ctx.textAlign = 'right'; ctx.textBaseline = 'bottom'; ctx.fillText('zoned bed ' + z.s.toFixed(0), g.w - g.pr, yz - 3);
+  const xh0 = g.X(st.t);
+  TT.forEach((t, n) => { const x = g.X(t), y = Y(s.tested[n]); ctx.beginPath(); ctx.arc(x, y, 4.5, 0, 7); ctx.fillStyle = T.ink; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = T.panel; ctx.stroke(); if (Math.abs(x - xh0) < 18 || Math.abs(x - xg) < 4) return; ctx.fillStyle = T.ink2; ctx.textAlign = n === 0 ? 'left' : n === 3 ? 'right' : 'center'; ctx.textBaseline = 'top'; ctx.fillText(s.tested[n].toFixed(0), x + (n === 0 ? -2 : n === 3 ? 2 : 0), y + 8); });
+  ctx.save(); ctx.translate(xg, yg); ctx.rotate(Math.PI / 4); ctx.fillStyle = T.panel; ctx.fillRect(-5, -5, 10, 10); ctx.lineWidth = 2; ctx.strokeStyle = T.ink2; ctx.strokeRect(-5, -5, 10, 10); ctx.restore();
+  ctx.font = T.fd; ctx.fillStyle = T.ink2; ctx.textAlign = xg > g.w - 70 ? 'right' : xg < g.pl + 60 ? 'left' : 'center'; ctx.textBaseline = 'bottom'; if (Math.abs(xg - g.X(st.t)) > 24 || st.m === 'G') { const above = yg - 22 > yz + 6; pill(ctx, 'best uniform ' + s.sg.toFixed(0), xg + (above ? 0 : 12), above ? yg - 16 : yg, above ? 'center' : 'left', T.ink2); }
+  ctx.font = T.fd; ctx.fillStyle = T.muted; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillText('match score', 0, 0);
+  const xc = st.m === 'G' ? g.X(z.tMean) : g.X(st.t), yc = st.m === 'G' ? yz : Y(c), col = selCol();
+  ctx.fillStyle = col; [-1, 1].forEach(sd => { ctx.beginPath(); ctx.moveTo(xc + sd * 21, yc); ctx.lineTo(xc + sd * 14, yc - 5); ctx.lineTo(xc + sd * 14, yc + 5); ctx.closePath(); ctx.fill(); });
+  ctx.beginPath(); ctx.arc(xc, yc, 9, 0, 7); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = T.panel; ctx.stroke();
+  const pulse = $('pulse'); pulse.style.display = (!st.used && st.m !== 'G') ? '' : 'none';
+  if (!st.used && st.m !== 'G') { ctx.font = T.fbm; const rt = xc < g.w - 90, tw = ctx.measureText('drag me').width, tx = rt ? xc + 27 : xc - 27 - tw; pill(ctx, 'drag me', tx, yc, 'left', col); pulse.style.left = xc + 'px'; pulse.style.top = yc + 'px'; pulse.style.borderColor = col; }
+  cv.setAttribute('aria-valuenow', String(Math.round(st.t * 100))); cv.setAttribute('aria-valuetext', 'Stub size ' + where(st.t) + ', match score ' + c.toFixed(0));
+}
+
+// ---------- 05: stub rule ----------
+function drawRule() {
+  const cv = $('cN'), w = wOf(cv), pl = 54, pr = 18, ps = [0, 10, 20, 30, 40, 50, 60, 70, 80], X = p => pl + p / 80 * (w - pl - pr);
+  const RP = Math.min(44, (w - pl - pr) / 8), rowH = Math.max(30, RP + 4), top = 30, h = top + 3 * rowH + 50, ctx = fit(cv, w, h), col = selCol();
+  const rows = [[0, 'A', 0], [st.t, st.m === 'G' ? 'Gen' : 'Now', 1], [1, 'D', 0]];
+  // beyond-limit region
+  ctx.fillStyle = T.gensoft; ctx.globalAlpha = 0.6; ctx.fillRect(X(PLIM), top - 14, X(80) + RP / 2 - X(PLIM), 3 * rowH + 4); ctx.globalAlpha = 1;
+  ctx.setLineDash([4, 3]); ctx.strokeStyle = T.gen; ctx.lineWidth = 1.25; ctx.beginPath(); ctx.moveTo(X(PLIM), top - 18); ctx.lineTo(X(PLIM), top + 3 * rowH - 6); ctx.stroke(); ctx.setLineDash([]);
+  ctx.font = T.fbm; ctx.fillStyle = T.gen; ctx.textBaseline = 'bottom'; { const ll = ctx.measureText('load limit · 45 mmHg').width, fitsR = X(PLIM) + 6 + ll < w - 4; ctx.textAlign = fitsR ? 'left' : 'right'; ctx.fillText('load limit · 45 mmHg', fitsR ? X(PLIM) + 6 : X(PLIM) - 6, top - 4); }
+  ctx.font = T.fb; ctx.fillStyle = T.muted; ctx.textAlign = 'right'; { const tl = ctx.measureText('size held, load spreads →').width; ctx.font = T.fbm; const ll = ctx.measureText('load limit · 45 mmHg').width; ctx.font = T.fb; if (X(PLIM) + 6 + ll + 16 + tl < w - pr) ctx.fillText('size held, load spreads →', w - pr, top - 4); }
+  ctx.font = T.fd;
+  rows.forEach((row, ri) => {
+    const y = top + RP / 2 + 4 + ri * rowH;
+    ctx.fillStyle = row[2] ? col : T.muted; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.font = row[2] ? T.fbm : T.fd; ctx.fillText(row[1], pl - 24, y);
+    ps.forEach(p => { const r = RP * (0.03 + 0.55 * ownOf(row[0], p)); ctx.beginPath(); ctx.arc(X(p), y, r, 0, 7); if (row[2]) { ctx.fillStyle = col; ctx.fill(); } else { ctx.lineWidth = 1.25; ctx.strokeStyle = T.nodeoff; ctx.stroke(); } });
+  });
+  const by = top + 3 * rowH + 8, bx0 = X(0) - RP / 2, bx1 = X(80) + RP / 2, nb = T.XPAL.length;
+  for (let i = 0; i < nb; i++) { ctx.fillStyle = rgb(T.XPAL[i]); ctx.fillRect(bx0 + i * (bx1 - bx0) / nb, by, (bx1 - bx0) / nb + 0.5, 7); }
+  ctx.font = T.fd; ctx.fillStyle = T.muted; ctx.textBaseline = 'top';
+  [0, 20, 40, 60, 80].forEach(p => { const x = X(p); ctx.textAlign = 'center'; ctx.fillText(String(p), x, by + 11); });
+  ctx.textAlign = 'left'; ctx.fillText('local pressure, mmHg', bx0, by + 27);
+}
+function spreadRow(t, ps) {
+  const n = ps.length, own = ps.map(p => ownOf(t, p)), fin = own.slice(), cap = capOf(t);
+  ps.forEach((p, k) => { if (p <= PLIM) return; const rad = radOf(p); for (let i = 0; i < n; i++) { if (ps[i] > PLIM) continue; const d = Math.abs(i - k); if (d >= rad) continue; fin[i] = Math.max(fin[i], own[i] + (cap - own[i]) * (1 - d / rad)); } });
+  return { own, fin };
+}
+function drawSpread() {
+  const cv = $('cR'), w = wOf(cv), n = 17, pl = 14, pr = 14, P = (w - pl - pr) / n, X = i => pl + (i + 0.5) * P;
+  const ch = 96, gap = 16, nodeR = Math.min(P * 0.46, 24), h = 14 + ch + gap + nodeR * 2 + 18, ctx = fit(cv, w, h), col = selCol();
+  const ps = []; for (let i = 0; i < n; i++) { const x = i - 8; ps.push(12 + 60 * Math.exp(-((x / 2.2) ** 2))); }
+  const r = spreadRow(st.t, ps), Yp = p => 14 + ch - p / 80 * ch;
+  ctx.strokeStyle = T.ax; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(pl, Yp(0) + 0.5); ctx.lineTo(w - pr, Yp(0) + 0.5); ctx.stroke();
+  ps.forEach((p, i) => { const k = Math.min(T.XPAL.length - 1, Math.floor(p / PMX * T.XPAL.length)); ctx.fillStyle = rgb(T.XPAL[k]); const bw = Math.max(3, P * 0.5); ctx.fillRect(X(i) - bw / 2, Yp(p), bw, Yp(0) - Yp(p)); });
+  ctx.setLineDash([4, 3]); ctx.strokeStyle = T.gen; ctx.lineWidth = 1.25; ctx.beginPath(); ctx.moveTo(pl, Yp(PLIM)); ctx.lineTo(w - pr, Yp(PLIM)); ctx.stroke(); ctx.setLineDash([]);
+  ctx.font = T.fbm; ctx.fillStyle = T.gen; ctx.textAlign = 'left'; ctx.textBaseline = 'bottom'; ctx.fillText('45 mmHg limit', pl, Yp(PLIM) - 3);
+  ctx.font = T.fd; ctx.fillStyle = T.muted; ctx.textAlign = 'right'; ctx.fillText('peak ' + Math.round(ps[8]) + ' mmHg', w - pr, 12);
+  const yN = 14 + ch + gap + nodeR, RR = s => nodeR * (0.12 + 0.88 * s / 0.85);
+  ps.forEach((p, i) => {
+    const x = X(i);
+    ctx.fillStyle = col;
+    if (r.fin[i] > r.own[i] + 0.005) { ctx.beginPath(); ctx.arc(x, yN, RR(r.fin[i]), 0, 7); ctx.globalAlpha = 0.35; ctx.fill(); ctx.globalAlpha = 1; }
+    ctx.beginPath(); ctx.arc(x, yN, RR(r.own[i]), 0, 7); ctx.fill();
+    if (p > PLIM) { ctx.beginPath(); ctx.arc(x, yN, RR(r.fin[i]) + 3, 0, 7); ctx.lineWidth = 1.25; ctx.strokeStyle = T.ink; ctx.stroke(); }
+  });
+  ctx.font = T.fd; ctx.fillStyle = T.muted; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('one row of stubs, 1 in apart', w / 2, yN + nodeR + 4);
+}
+
+// ---------- 06/07: grids and hero ----------
+function gridGeom(w, top, maxH) { const pad = 6; const P = Math.min((w - 2 * pad) / 80, maxH ? (maxH - top - pad) / 32 : 1e9); return { P, ox: (w - 80 * P) / 2, oy: top, gw: 80 * P, gh: 32 * P }; }
+function drawGridLines(ctx, g) {
+  ctx.strokeStyle = T.grid; ctx.lineWidth = Math.max(0.6, g.P * 0.07);
+  ctx.beginPath();
+  for (let i = 0; i <= 80; i++) { ctx.moveTo(g.ox + i * g.P, g.oy); ctx.lineTo(g.ox + i * g.P, g.oy + g.gh); }
+  for (let j = 0; j <= 32; j++) { ctx.moveTo(g.ox, g.oy + j * g.P); ctx.lineTo(g.ox + g.gw, g.oy + j * g.P); }
+  ctx.stroke();
+}
+function headFeet(ctx, g, y) { ctx.font = T.fd; ctx.fillStyle = T.muted; ctx.textBaseline = 'top'; ctx.textAlign = 'left'; ctx.fillText('← head', g.ox, y); ctx.textAlign = 'right'; ctx.fillText('feet →', g.ox + g.gw, y); }
+function drawDyn() {
+  const cv = $('cG'), w = wOf(cv), top = 18, g = gridGeom(w, top), h = top + g.gh + 8, ctx = fit(cv, w, h), S = st.s, col = selCol();
+  cv._g = g; headFeet(ctx, g, 0); drawGridLines(ctx, g);
+  ctx.fillStyle = col; ctx.globalAlpha = 0.35; ctx.beginPath();
+  for (let k = 0; k < NI * NJ; k++) if (S.F[k] === 1) { const i = Math.floor(k / NJ), j = k % NJ, r = g.P * (0.03 + 0.55 * S.S[k]), x = g.ox + i * g.P, y = g.oy + j * g.P; ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, 7); }
+  ctx.fill(); ctx.globalAlpha = 1;
+  ctx.beginPath();
+  for (let i = 0; i < NI; i++) for (let j = 0; j < NJ; j++) { const r = g.P * (0.03 + 0.55 * S.OWN[i * NJ + j]), x = g.ox + i * g.P, y = g.oy + j * g.P; ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, 7); }
+  ctx.fill();
+  ctx.strokeStyle = T.ink; ctx.lineWidth = 1; ctx.beginPath();
+  for (let k = 0; k < NI * NJ; k++) if (S.F[k] === 2) { const i = Math.floor(k / NJ), j = k % NJ, r = g.P * (0.03 + 0.55 * S.S[k]) + Math.max(1.5, g.P * 0.08), x = g.ox + i * g.P, y = g.oy + j * g.P; ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, 7); }
+  ctx.stroke();
+  if (st.hovN && st.hovN.cv === 'cG') { const x = g.ox + st.hovN.i * g.P, y = g.oy + st.hovN.j * g.P; ctx.strokeStyle = T.ink; ctx.lineWidth = 1; ctx.strokeRect(x - g.P / 2, y - g.P / 2, g.P, g.P); }
+}
+function drawZone() {
+  const cv = $('cZ'), w = wOf(cv), lab = 16, sh = 40, gp = 10, g0 = gridGeom(w, 0), oyS = lab + 2, oy = oyS + sh + gp, g = { ...g0, oy }, h = oy + g.gh + 8, ctx = fit(cv, w, h), S = sweep(st.bi).zone.S, col = T.gen;
+  cv._g = g; headFeet(ctx, g, 0);
+  ctx.font = T.fd; ctx.fillStyle = T.muted; ctx.textAlign = 'center'; if (g.gw > 520) ctx.fillText('90th-percentile stub size per column', g.ox + g.gw / 2, 0);
+  ctx.strokeStyle = T.ax; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(g.ox, oyS + sh + 0.5); ctx.lineTo(g.ox + g.gw, oyS + sh + 0.5); ctx.stroke();
+  ctx.fillStyle = col; ctx.globalAlpha = 0.5;
+  for (let i = 0; i < NI; i++) { const zr = sweep(st.bi).zone, bh = 4 + (sh - 4) * (S.Z[i] - zr.zmin) / Math.max(0.01, zr.zmax - zr.zmin); ctx.fillRect(g.ox + i * g.P - g.P * 0.36, oyS + sh - bh, g.P * 0.72, bh); }
+  ctx.globalAlpha = 1;
+  drawGridLines(ctx, g);
+  ctx.fillStyle = col; ctx.beginPath();
+  for (let i = 0; i < NI; i++) { const r = g.P * (0.03 + 0.55 * S.Z[i]); for (let j = 0; j < NJ; j++) { const x = g.ox + i * g.P, y = g.oy + j * g.P; ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, 7); } }
+  ctx.fill();
+  if (st.hovN && st.hovN.cv === 'cZ') { const x = g.ox + st.hovN.i * g.P; ctx.strokeStyle = T.ink; ctx.lineWidth = 1; ctx.strokeRect(x - g.P / 2, oyS - 2, g.P, oy + g.gh - oyS + 4); }
+}
+function drawHero() {
+  const cv = $('cH'), w = wOf(cv), g = gridGeom(w, 4, Math.max(260, Math.min(470, w * 0.42))), h = g.oy + g.gh + 6, ctx = fit(cv, w, h);
+  const z = sweep(st.bi).zone, nb = T.XPAL.length;
+  for (let i = 0; i < NI; i++) { const r = g.P * (0.05 + 0.55 * z.S.Z[i]); for (let j = 0; j < NJ; j++) {
+    const k = i * NJ + j, p = z.NPz[k], x = g.ox + i * g.P, y = g.oy + j * g.P;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 7);
+    ctx.fillStyle = p > 1.5 ? rgb(T.XPAL[Math.min(nb - 1, Math.floor(p / PMX * nb))]) : T.dot;
+    ctx.fill();
+  } }
+}
+
+// ---------- readouts ----------
+function readout() {
+  const b = BODIES[st.bi], a = st.a, s = sweep(st.bi), c = cur(), S = st.s, z = s.zone;
+  $('scv').textContent = c.toFixed(0); $('scl').textContent = '/ 100 match · ' + label();
+  $('rngo').textContent = st.m === 'G' ? 'gen.' : st.m === 'X' ? where(st.t).replace('between ', '').replace(' and ', '–').replace('at ', '') : LET[st.m];
+  $('rng').value = String(Math.round(st.t * 1000));
+  let area = 0; for (let k = 0; k < R * C; k++) if (a.P[k] > 1.5) area++;
+  $('st1').innerHTML = '<span>Body <b>' + b.k + ', ' + b.W + ' lb</b></span><span>Peak <b>' + a.peakP.toFixed(0) + ' mmHg</b></span><span>Contact <b>' + Math.round(area * 0.25) + ' in²</b></span><span>Center of pressure <b>' + (a.cop[0] * 0.5).toFixed(1) + ' in</b> from the head end</span>';
+  $('st3').innerHTML = '<span>Max depth <b>' + a.maxD.toFixed(2) + ' in</b></span><span>Shoulders <b>' + (a.sh * 0.5 + 0.25).toFixed(1) + ' in</b></span><span>Hips <b>' + (a.hp * 0.5 + 0.25).toFixed(1) + ' in</b></span><span>Spine band <b>' + ((a.bot - a.top + 1) * 0.5).toFixed(1) + ' × 4.5 in</b></span>';
+  $('st4').innerHTML = '<span>' + b.k + ' on ' + label() + ': <b>' + c.toFixed(0) + ' / 100</b></span><span>DTW <b>' + a.score.toFixed(3) + ' in</b></span><span>Best tested <b>' + LET[s.best] + ' · ' + s.tested[s.best].toFixed(0) + '</b></span><span>Best uniform <b>' + where(s.tg) + ' · ' + s.sg.toFixed(0) + '</b></span><span style="color:var(--gen)">Zoned bed <b style="color:var(--gen)">' + z.s.toFixed(0) + '</b></span>';
+  $('st6').innerHTML = '<span>Stubs <b>' + (NI * NJ).toLocaleString() + '</b></span><span>Base <b>' + pct(S.base) + '</b></span><span>Limit size <b>' + pct(S.cap) + '</b></span><span>Over the limit <b>' + S.nOver + '</b></span><span>Raised by spreading <b>' + S.nSpread + '</b></span>';
+  const za = z.a, zoneAt = (r, span) => { const c2 = Math.round(r * 0.5 + 0.25); let m = 0; for (let i = Math.max(0, c2 - span); i <= Math.min(NI - 1, c2 + span); i++) m = Math.max(m, z.S.Z[i]); return m; };
+  $('st7').innerHTML = '<span>Match <b style="color:var(--gen)">' + z.s.toFixed(0) + ' / 100</b></span><span>Base stub <b>' + pct(baseOf(z.b)) + '</b></span><span>Shoulder zone <b>' + pct(zoneAt(za.sh, 3)) + '</b></span><span>Hip zone <b>' + pct(zoneAt(za.hp, 3)) + '</b></span><span>Stub range <b>' + pct(z.zmin) + '–' + pct(z.zmax) + '</b></span>';
+  $('zTitle').textContent = 'Generated zoned bed · ' + b.k + ' body';
+  $('heroCap').textContent = 'Generated zoned bed · ' + b.k + ' body · match ' + z.s.toFixed(0) + ' / 100';
+  $('kX').textContent = st.m === 'G' ? 'Zoned bed: stubs from ' + pct(z.zmin) + ' in the soft zones to ' + pct(z.zmax) + ' in the firmest. Dashed: A and D.' : 'Filled: current stub, ' + pct(baseOf(st.t)) + '. Dashed: A and D.';
+}
+
+// ---------- render loop ----------
+let dirty = false, needEval = true;
+function evalState() {
+  const z = sweep(st.bi).zone;
+  if (st.m === 'G') { st.t = z.b; st.a = z.a; st.s = z.S; }
+  else { st.a = evalAt(st.bi, st.t); st.s = computeStubs(st.a, st.t); }
+  st.offP = mapImage(st.a.P, T.XPAL, PMX, 1.5); st.offD = mapImage(st.a.D, T.DPAL, DMX, 0.02);
+}
+function drawAll() {
+  drawHero(); drawPressure(); drawPD(); drawCell(); drawDepth(); drawSpine(); drawFit(); drawRule(); drawSpread(); drawDyn(); drawZone(); drawZSpine(); drawScores(); readout();
+}
+function schedule(ev) { if (ev) needEval = true; if (dirty) return; dirty = true; requestAnimationFrame(() => { dirty = false; if (needEval) { evalState(); needEval = false; } drawAll(); }); }
+function press(gid, attr, val) { document.querySelectorAll('#' + gid + ' button').forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset[attr] === String(val)))); }
+function used() { if (!st.used) { st.used = true; $('pulse').style.display = 'none'; } }
+function setT(t) { st.t = Math.max(0, Math.min(1, t)); st.m = 'X'; press('beds', 'm', 'none'); schedule(true); }
+
+$('bodies').addEventListener('click', e => { const btn = e.target.closest('button'); if (!btn) return; st.bi = +btn.dataset.b; press('bodies', 'b', st.bi); st.hovP = null; schedule(true); });
+$('beds').addEventListener('click', e => { const btn = e.target.closest('button'); if (!btn) return; const m = btn.dataset.m; st.m = m === 'G' ? 'G' : +m; if (m !== 'G') st.t = TT[+m]; press('beds', 'm', m); schedule(true); });
+$('rng').addEventListener('input', e => { used(); setT(+e.target.value / 1000); });
+
+const cF = $('cF'); let pend = null;
+function scrub(e) { const g = fitGeom(), r = cF.getBoundingClientRect(); pend = (e.clientX - r.left - g.pl) / (g.w - g.pl - g.pr); requestAnimationFrame(() => { if (pend == null) return; const t = pend; pend = null; setT(t); }); }
+cF.addEventListener('pointerdown', e => { cF.setPointerCapture(e.pointerId); cF.classList.add('drag'); used(); scrub(e); });
+cF.addEventListener('pointermove', e => { if (e.buttons & 1) scrub(e); });
+['pointerup', 'pointercancel'].forEach(ev => cF.addEventListener(ev, () => cF.classList.remove('drag')));
+cF.addEventListener('keydown', e => { const big = e.shiftKey ? 0.1 : 0.02; let t = null; if (e.key === 'ArrowRight' || e.key === 'ArrowUp') t = st.t + big; else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') t = st.t - big; else if (e.key === 'Home') t = 0; else if (e.key === 'End') t = 1; if (t == null) return; e.preventDefault(); used(); setT(t); });
+
+function mapHover(id, out) {
+  const cv = $(id);
+  cv.addEventListener('pointermove', e => {
+    const g = cv._g; if (!g) return; const rc = cv.getBoundingClientRect(), r = Math.floor((e.clientX - rc.left - g.OX) / g.SC), c = Math.floor((e.clientY - rc.top - g.OY) / g.SC);
+    if (c < 0 || c >= C || r < 0 || r >= R) return;
+    const k = r * C + c, p = st.a.P[k], d = st.a.D[k];
+    st.hovP = { cv: id, r, c };
+    $(out).textContent = p > 0 ? 'Sensor ' + (r + 1) + ' × ' + (C - c) + ' · ' + (r * 0.5 + 0.25).toFixed(1) + ' in from the head end · ' + p.toFixed(1) + ' mmHg → ' + d.toFixed(2) + ' in deep' : 'Sensor ' + (r + 1) + ' × ' + (C - c) + ' · no contact';
+    id === 'cP' ? drawPressure() : drawDepth();
+  });
+  cv.addEventListener('pointerleave', () => { st.hovP = null; $(out).textContent = id === 'cP' ? 'Hover the map to read a sensor' : 'Hover the map to read a cell'; id === 'cP' ? drawPressure() : drawDepth(); });
+}
+mapHover('cP', 'hv1'); mapHover('cD', 'hv3');
+
+const cC = $('cC');
+cC.addEventListener('pointermove', e => {
+  const g = cC._g; if (!g) return; const rc = cC.getBoundingClientRect(); const p = (e.clientX - rc.left - g.pl) / (g.w - g.pl - g.pr) * g.PM;
+  if (p < 0 || p > g.PM) return; st.pdHover = p;
+  $('hv2').textContent = 'At ' + p.toFixed(0) + ' mmHg: ' + TT.map((t, n) => LET[n] + ' ' + depthOf(p, bedAt(t)).toFixed(2)).join(' · ') + ' · ' + (st.m === 'G' ? 'zoned bed ' + depthOf(p, bedAt(sweep(st.bi).zone.tMax)).toFixed(2) + '–' + depthOf(p, bedAt(sweep(st.bi).zone.tMin)).toFixed(2) : 'current ' + depthOf(p, bedAt(st.t)).toFixed(2)) + ' in';
+  drawPD();
+});
+cC.addEventListener('pointerleave', () => { st.pdHover = null; $('hv2').textContent = 'Move across the chart'; drawPD(); });
+
+$('cG').addEventListener('pointermove', e => {
+  const cv = $('cG'), g = cv._g; if (!g) return; const rc = cv.getBoundingClientRect(), i = Math.round((e.clientX - rc.left - g.ox) / g.P), j = Math.round((e.clientY - rc.top - g.oy) / g.P);
+  if (i < 0 || i >= NI || j < 0 || j >= NJ) return;
+  const k = i * NJ + j, S = st.s, p = S.NP[k];
+  const why = S.F[k] === 2 ? ' · over the limit: held at the limit size, load shared with its neighbours' : S.F[k] === 1 ? ' · raised from ' + pct(S.OWN[k]) + ' by load spreading' : '';
+  $('hv6').textContent = 'Stub ' + i + ' in from the head end, ' + (32 - j) + ' in across · ' + p.toFixed(1) + ' mmHg · size ' + pct(S.S[k]) + why;
+  st.hovN = { cv: 'cG', i, j }; drawDyn();
+});
+$('cG').addEventListener('pointerleave', () => { st.hovN = null; $('hv6').textContent = 'Hover a stub'; drawDyn(); });
+$('cZ').addEventListener('pointermove', e => {
+  const cv = $('cZ'), g = cv._g; if (!g) return; const rc = cv.getBoundingClientRect(), i = Math.round((e.clientX - rc.left - g.ox) / g.P);
+  if (i < 0 || i >= NI) return; const z = sweep(st.bi).zone, S = z.S; let mx = 0; for (let j = 0; j < NJ; j++) mx = Math.max(mx, S.S[i * NJ + j]);
+  $('hv7').textContent = 'Column ' + i + ' in from the head end · zone stub ' + pct(S.Z[i]) + ' (90th percentile of 33 stubs; largest ' + pct(mx) + ') · stiffness ' + where(Math.min(1, (S.Z[i] - SB0) / SB1));
+  st.hovN = { cv: 'cZ', i, j: 0 }; drawZone();
+});
+$('cZ').addEventListener('pointerleave', () => { st.hovN = null; $('hv7').textContent = 'Hover a column'; drawZone(); });
+
+// layout + theme
+const bar = $('bar');
+function barH() { document.documentElement.style.setProperty('--bar-h', bar.offsetHeight + 'px'); }
+let lastW = 0;
+const ro = new ResizeObserver(() => { barH(); const w = $('main').clientWidth; if (Math.abs(w - lastW) > 1) { lastW = w; schedule(false); } });
+ro.observe($('main')); ro.observe(bar);
+function retheme() { readTheme(); legend($('lP'), T.XPAL, PMX, [0, 20, 40, 60, 80], 'mmHg'); legend($('lD'), T.DPAL, DMX, [0, 0.5, 1, 1.5, 2, 2.5], 'in'); schedule(true); }
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', retheme);
+new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { readTheme(); legend($('lP'), T.XPAL, PMX, [0, 20, 40, 60, 80], 'mmHg'); legend($('lD'), T.DPAL, DMX, [0, 0.5, 1, 1.5, 2, 2.5], 'in'); schedule(false); });
+readTheme(); barH();
+legend($('lP'), T.XPAL, PMX, [0, 20, 40, 60, 80], 'mmHg');
+legend($('lD'), T.DPAL, DMX, [0, 0.5, 1, 1.5, 2, 2.5], 'in');
+evalState(); needEval = false; drawAll();
+})();
+</script>
+</body>
+</html>
