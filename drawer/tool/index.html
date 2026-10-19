@@ -328,8 +328,8 @@ table.parts td:last-child { text-align: right; padding-right: 0; }
             <div class="num"><label for="i-w">Width</label><input id="i-w" type="number" inputmode="decimal"></div>
             <div class="num"><label for="i-d">Depth</label><input id="i-d" type="number" inputmode="decimal"></div>
           </div>
-          <div class="num"><label for="i-label">Name on the label</label><input id="i-label" type="text" maxlength="16" placeholder="Optional, e.g. PENS" autocomplete="off" spellcheck="false"></div>
-          <p class="note" id="i-label-note">Debossed under the container with its number.</p>
+          <div class="num"><label for="i-label">Name</label><input id="i-label" type="text" maxlength="16" placeholder="Optional, e.g. PENS" autocomplete="off" spellcheck="false"></div>
+          <p class="note" id="i-label-note">Only the container's tag is debossed underneath; the name shows on the plan and in file names.</p>
           <div class="seg" style="--cols:2" role="group" aria-label="Container type">
             <button type="button" id="t-standard" aria-pressed="true">Standard<small>flat floor</small></button>
             <button type="button" id="t-dome" aria-pressed="false">Dome<small>bowl floor for small parts</small></button>
@@ -2432,7 +2432,7 @@ function refreshInspector() {
   const c = ctx(), lab = $('#i-label');
   if (document.activeElement !== lab) lab.value = b.name || '';
   const nm = nameOf(b);
-  $('#i-label-note').innerHTML = `Debossed underneath: <b class="mono">${esc(nm ? `${b.label} ${nm}` : b.label)}</b>`;
+  $('#i-label-note').innerHTML = `Only the tag <b class="mono">${esc(b.label)}</b> is debossed underneath; the name shows on the plan and in file names.`;
   $('#t-standard').setAttribute('aria-pressed', String(b.type !== 'dome'));
   $('#t-dome').setAttribute('aria-pressed', String(b.type === 'dome'));
   $('#f-bowl').hidden = b.type !== 'dome';
@@ -2776,7 +2776,7 @@ function build3D() {
   const edges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(W, Hh, D)), T3.mat.line); edges.position.y = Hh / 2; grp.add(edges);
   const design = S.step === 'design', lift = S.step === 'export' && S.explode ? Math.min(3, Hh * 0.8) + 0.5 : 0;
   for (const b of S.boxes) {
-    const res = K.buildContainer(b, c, { seg: 6, tracks: !design, bead: false, label: S.step === 'export' ? { label: b.label, name: b.name } : null });
+    const res = K.buildContainer(b, c, { seg: 6, tracks: !design, bead: false, label: S.step === 'export' ? { label: b.label } : null });
     if (design) grp.add(new THREE.Mesh(geomFromShells([res.shells[0]]), b.id === S.sel ? T3.mat.glassSel : T3.mat.glass));
     else {
       grp.add(new THREE.Mesh(geomFromShells([res.shells[0]], lift), T3.mat.body));
@@ -2784,7 +2784,7 @@ function build3D() {
     }
   }
   if (!design) for (const v of connViews()) {
-    const con = K.buildConnector(v.pts[0], v.pts[1], c, 18, S.step === 'export' ? { label: v.label, extra: `${v.pr.A.label}-${v.pr.B.label}` } : null, { oa: v.pr.geo.oa, ob: v.pr.geo.ob });
+    const con = K.buildConnector(v.pts[0], v.pts[1], c, 18, S.step === 'export' ? { label: v.label } : null, { oa: v.pr.geo.oa, ob: v.pr.geo.ob });
     grp.add(new THREE.Mesh(geomFromShells(con.shells), v.cn.uid === S.csel ? T3.mat.connSel : T3.mat.conn));
   }
 }
@@ -2797,9 +2797,9 @@ function parts() {
   relabel();
   const conts = S.boxes.slice().sort((a, b) => a.label.localeCompare(b.label)).map(b => {
     const nm = nameOf(b), sl = slug(nm);
-    return { kind: 'container', label: b.label, b, name: nm, file: `${b.label}${sl ? '-' + sl : ''}-${typeWord(b)}-${fileLen(b.w)}x${fileLen(b.d)}.stl`, type: typeText(b), size: dimsTxt(b.w, b.d), text: { label: b.label, name: b.name } };
+    return { kind: 'container', label: b.label, b, name: nm, file: `${b.label}${sl ? '-' + sl : ''}-${typeWord(b)}-${fileLen(b.w)}x${fileLen(b.d)}.stl`, type: typeText(b), size: dimsTxt(b.w, b.d), text: { label: b.label } };
   });
-  const cons = connViews().map(v => ({ kind: 'connector', label: v.label, v, name: '', file: `${v.label}-${v.pr.A.label}-${v.pr.B.label}-${fileLen(v.len)}.stl`, type: `${v.pr.A.label} ↔ ${v.pr.B.label}`, size: len(v.len), text: { label: v.label, extra: `${v.pr.A.label}-${v.pr.B.label}` } }));
+  const cons = connViews().map(v => ({ kind: 'connector', label: v.label, v, name: '', file: `${v.label}-${v.pr.A.label}-${v.pr.B.label}-${fileLen(v.len)}.stl`, type: `${v.pr.A.label} ↔ ${v.pr.B.label}`, size: len(v.len), text: { label: v.label } }));
   return conts.concat(cons);
 }
 function stlOf(part) {
@@ -2834,7 +2834,7 @@ function layoutJSON() {
     },
     containers: S.boxes.slice().sort((a, b) => a.label.localeCompare(b.label)).map(b => {
       const r = K.planToWorldRect(b, c), dr = K.draftOf(b, P), bl = K.blendOf(b, c), so = K.slotsOf(b, c), L = so.loop;
-      const lab = K.placeContainerLabel(b, c, K.shapeOf(b, c), { label: b.label, name: b.name });
+      const lab = K.placeContainerLabel(b, c, K.shapeOf(b, c), { label: b.label });
       return {
         id: b.label, name: nameOf(b), type: b.type === 'dome' ? 'dome' : 'standard', walls: wallWord(b), draft: r4(dr.draft), blend: r4(bl.r),
         bowlDepth: b.type === 'dome' ? r4(K.bowlOf(b, c).depth) : null,
@@ -2847,7 +2847,7 @@ function layoutJSON() {
     }),
     connectors: connViews().map(v => {
       const [ha, hb] = handsOf(v), oa = v.pr.geo.oa, ob = v.pr.geo.ob;
-      const lab = K.buildConnector(v.pts[0], v.pts[1], c, 6, { label: v.label, extra: `${v.pr.A.label}-${v.pr.B.label}` }, { oa: v.pr.geo.oa, ob: v.pr.geo.ob }).label;
+      const lab = K.buildConnector(v.pts[0], v.pts[1], c, 6, { label: v.label }, { oa: v.pr.geo.oa, ob: v.pr.geo.ob }).label;
       return { id: v.label, between: [v.pr.A.label, v.pr.B.label], sides: [v.pr.sa, v.pr.sb], buttonA: pt(v.pts[0]), buttonB: pt(v.pts[1]), outwardA: oa, outwardB: ob, outerArmA: [-oa[1] * ha, oa[0] * ha], outerArmB: [-ob[1] * hb, ob[0] * hb], length: r4(v.len), straight: v.pr.geo.straight,
         label: lab ? { text: lab.text, capHeight: r4(lab.cap), centre: pt(lab.centre), angle: Math.round(lab.angle * 100) / 100 } : null };
     }),
