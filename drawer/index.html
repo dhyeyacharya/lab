@@ -1,0 +1,1917 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Parametric Drawer System</title>
+<meta name="description" content="A generative drawer organizer: measured from one photo, laid out by a constrained partition algorithm, shaped by a few parameters, joined by snap-fit connectors and exported as labelled, print-ready STL files. By Dhyey Acharya.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="A drawer organizer, generated from one photo">
+<meta property="og:description" content="Measure, generate, shape, connect, label and print: the algorithms behind a parametric drawer system built in Grasshopper and on the web. By Dhyey Acharya.">
+<meta property="og:url" content="https://dhyeyacharya.github.io/lab/drawer/">
+<meta property="og:image" content="https://dhyeyacharya.github.io/lab/drawer/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232747c9'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='2.2'%3E%3Crect x='6' y='7' width='9' height='8' rx='2'/%3E%3Crect x='17' y='7' width='9' height='18' rx='2'/%3E%3Crect x='6' y='17' width='9' height='8' rx='2'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Project 03 · same system as projects 01 and 02: white stage, drafting cobalt, Bricolage / Plex */
+:root {
+  --bg: #ffffff;
+  --panel: #f5f6f7;
+  --ink: #16191d;
+  --ink-2: #3a4048;
+  --muted: #5b636d;
+  --line: #cfd4da;
+  --grid: #e1e4e8;
+  --ax: #aab2bb;
+  --base: #e6e9ee;
+  --wall: #c3c9d1;
+  --accent: #2747c9;          /* drafting cobalt, shared with projects 01 and 02 */
+  --accent-ink: #1b3399;
+  --accent-soft: #dbe2fb;
+  --dome: #c9d3f2;
+  --good: #1f7a4d;
+  --warn: #c2620f;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1013; --panel: #16191d; --ink: #e8ebee; --ink-2: #c3c9d0; --muted: #959ea8; --line: #2b3037;
+    --grid: #23272d; --ax: #48505a; --base: #232831; --wall: #3b424d;
+    --accent: #8aa0ff; --accent-ink: #b3c1ff; --accent-soft: #1d2858; --dome: #2a3560; --good: #5cc28f; --warn: #f0a35a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1013; --panel: #16191d; --ink: #e8ebee; --ink-2: #c3c9d0; --muted: #959ea8; --line: #2b3037;
+  --grid: #23272d; --ax: #48505a; --base: #232831; --wall: #3b424d;
+  --accent: #8aa0ff; --accent-ink: #b3c1ff; --accent-soft: #1d2858; --dome: #2a3560; --good: #5cc28f; --warn: #f0a35a; color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 var(--font-body); -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+img { max-width: 100%; display: block; }
+.wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 18px 0; font: 11px var(--font-data); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.top a { color: var(--ink); text-decoration: none; }
+.top a:hover { color: var(--accent); }
+
+.hero { padding: 36px 0 8px; }
+.eyebrow { font: 11px var(--font-data); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(36px, 5.6vw, 68px); line-height: 1.0; letter-spacing: -0.02em; margin: 14px 0 20px; max-width: 16ch; text-wrap: balance; }
+.dek { font-size: clamp(17px, 1.7vw, 20px); line-height: 1.5; color: var(--ink-2); max-width: 62ch; margin: 0 0 22px; text-wrap: pretty; }
+.cta { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 6px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); text-decoration: none; font: 500 14px/1 var(--font-body); cursor: pointer; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { background: var(--accent-ink); border-color: var(--accent-ink); }
+:root[data-theme="dark"] .btn.primary, .btn.primary { color: #fff; }
+.btn:focus-visible, .seg button:focus-visible, .loop a:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hero-fig { margin: 36px 0 0; }
+.hero-fig img { width: 100%; height: auto; aspect-ratio: 2 / 1; object-fit: cover; border-radius: 10px; background: #33302d; }
+.hero-fig figcaption, .fig figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; margin-top: 10px; font: 12px var(--font-data); color: var(--muted); }
+.loop { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 6px; margin: 28px 0 0; padding: 0; }
+.loop li { display: flex; align-items: center; gap: 6px; }
+.loop li + li::before { content: "→"; color: var(--muted); font-size: 13px; }
+.loop a { display: inline-flex; gap: 8px; align-items: baseline; padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; text-decoration: none; font-size: 13px; color: var(--ink); background: var(--bg); }
+.loop a span { font: 11px var(--font-data); color: var(--accent); }
+.loop a:hover { border-color: var(--accent); }
+
+.facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin: 48px 0 0; border-block: 1px solid var(--line); }
+.facts div { padding: 18px 18px 18px 0; }
+.facts div + div { padding-left: 18px; border-left: 1px solid var(--line); }
+.facts b { display: block; font: 700 28px/1.05 var(--font-display); letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.facts span { display: block; margin-top: 6px; font-size: 13px; line-height: 1.45; color: var(--muted); }
+
+.step { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 48px; padding: 76px 0; border-top: 1px solid var(--line); scroll-margin-top: 16px; }
+.cap { position: sticky; top: 28px; align-self: start; }
+.num { font: 12px var(--font-data); color: var(--accent); letter-spacing: .04em; }
+.cap h2 { font: 700 30px/1.08 var(--font-display); letter-spacing: -0.01em; margin: 6px 0 14px; text-wrap: balance; }
+.cap p { margin: 0 0 12px; color: var(--ink-2); text-wrap: pretty; }
+.cap .how { font-size: 13px; line-height: 1.55; color: var(--muted); }
+.cap .how i { font-style: normal; color: var(--accent); }
+.vis { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 16px 14px; min-width: 0; }
+.card-hd { display: flex; justify-content: space-between; align-items: center; gap: 8px 14px; flex-wrap: wrap; margin: 0 0 10px; }
+.card-hd h3 { margin: 0; font: 500 13px/1.3 var(--font-body); color: var(--ink); }
+.card svg { display: block; width: 100%; height: auto; }
+.stats { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 10px 0 0; font: 12px var(--font-data); color: var(--muted); font-variant-numeric: tabular-nums; }
+.stats b { color: var(--ink); font-weight: 500; }
+.key { margin: 8px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+.duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.ctrls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; margin: 0 0 12px; }
+.ctl { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.lab { font: 11px var(--font-data); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.seg { display: flex; gap: 4px; flex-wrap: wrap; }
+.seg button { font: 500 13px/1.15 var(--font-body); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--ink-2); cursor: pointer; }
+.seg button:hover { border-color: var(--ax); }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
+.slide { display: flex; align-items: center; gap: 8px; }
+.slide input { width: 120px; accent-color: var(--accent); margin: 0; }
+.slide output { font: 12px var(--font-data); color: var(--muted); min-width: 4.2em; font-variant-numeric: tabular-nums; }
+.opts { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.opts figure { margin: 0; min-width: 0; }
+.opts figcaption { margin-top: 6px; font: 11px/1.3 var(--font-data); color: var(--muted); }
+.formula { margin: 10px 0 0; padding: 10px 12px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line); font: 12.5px/1.6 var(--font-data); color: var(--ink-2); overflow-x: auto; white-space: nowrap; }
+.formula i { font-style: italic; }
+.photo { margin: 0; }
+.photo img { width: 100%; height: auto; border-radius: 10px; background: #33302d; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th { text-align: left; font: 11px var(--font-data); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 400; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line); }
+.tbl td { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--grid); vertical-align: top; color: var(--ink-2); }
+.tbl td:first-child { color: var(--ink); white-space: nowrap; }
+.tbl td.n { font: 12.5px var(--font-data); white-space: nowrap; color: var(--ink); font-variant-numeric: tabular-nums; }
+.tw { overflow-x: auto; }
+.chain { display: grid; gap: 10px; }
+.chain .g { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+.chain .g b { font: 500 13px/1.35 var(--font-body); }
+.chain .g b small { display: block; font: 11px var(--font-data); color: var(--accent); margin-bottom: 2px; }
+.chain .g p { margin: 0; font-size: 13px; line-height: 1.55; color: var(--ink-2); }
+.chain .g code, .method code { font: 12px var(--font-data); background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; white-space: nowrap; }
+
+.outputs { padding: 76px 0; border-top: 1px solid var(--line); }
+.outputs h2, .method h2 { font: 700 30px/1.08 var(--font-display); letter-spacing: -0.01em; margin: 6px 0 24px; }
+.trio { display: grid; grid-template-columns: 1.25fr 1fr 1fr; gap: 16px; align-items: start; }
+.trio figure { margin: 0; min-width: 0; }
+.trio img { border-radius: 8px; border: 1px solid var(--line); background: #fff; }
+.trio pre { margin: 0; padding: 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); font: 11.5px/1.5 var(--font-data); color: var(--ink-2); overflow-x: auto; max-height: 340px; }
+.trio ul { margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.trio li { display: flex; justify-content: space-between; gap: 10px; padding: 9px 12px; font: 12px var(--font-data); border-top: 1px solid var(--grid); color: var(--ink-2); }
+.trio li:first-child { border-top: 0; }
+.trio li span { color: var(--muted); }
+.trio figcaption { margin-top: 8px; font: 12px var(--font-data); color: var(--muted); }
+
+.method { padding: 76px 0 40px; border-top: 1px solid var(--line); }
+.method ol { list-style: none; counter-reset: m; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 48px; }
+.method li { counter-increment: m; align-content: start; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 2px 8px; }
+.method li::before { content: counter(m, decimal-leading-zero); font: 12px/1.9 var(--font-data); color: var(--accent); grid-row: span 2; }
+.method li b { font-weight: 500; }
+.method li p { margin: 0; font-size: 14px; color: var(--ink-2); line-height: 1.55; }
+.note { max-width: 70ch; margin: 36px 0 0; padding: 2px 0 2px 14px; border-left: 2px solid var(--accent); font-size: 13px; line-height: 1.55; color: var(--muted); }
+.note b { color: var(--ink); font-weight: 500; }
+.closer { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin: 48px 0 0; padding: 24px; border-radius: 12px; background: var(--accent-soft); }
+.closer p { margin: 0; font: 700 22px/1.2 var(--font-display); max-width: 30ch; }
+footer { border-top: 1px solid var(--line); margin-top: 40px; }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; padding-block: 22px 40px; font: 12px var(--font-data); color: var(--muted); }
+footer a { color: var(--ink); text-decoration: none; }
+footer a:hover { color: var(--accent); }
+
+/* svg figure styles, themed through the tokens */
+.s-ink { stroke: var(--ink); fill: none; }
+.s-mut { stroke: var(--muted); fill: none; }
+.s-ax { stroke: var(--ax); fill: none; }
+.s-acc { stroke: var(--accent); fill: none; }
+.f-base { fill: var(--base); }
+.f-wall { fill: var(--wall); }
+.f-dome { fill: var(--dome); }
+.f-acc { fill: var(--accent); }
+.f-acc-ink { fill: var(--accent-ink); }
+.f-soft { fill: var(--accent-soft); }
+.f-bg { fill: var(--bg); }
+.f-panel { fill: var(--panel); }
+.t { font-family: var(--font-data); fill: var(--muted); }
+.t-ink { font-family: var(--font-data); fill: var(--ink); }
+.t-acc { font-family: var(--font-data); fill: var(--accent); }
+.good { stroke: var(--good); }
+
+@media (max-width: 960px) {
+  .step { grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 56px 0; }
+  .cap { position: static; max-width: 64ch; }
+  .method ol { grid-template-columns: minmax(0, 1fr); }
+  .trio { grid-template-columns: minmax(0, 1fr); }
+  .opts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 680px) {
+  .wrap { padding: 0 16px; }
+  .duo { grid-template-columns: minmax(0, 1fr); }
+  .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .facts div:nth-child(3) { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); }
+  .facts div:nth-child(4) { border-top: 1px solid var(--line); }
+  .opts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hero { padding-top: 20px; }
+  .top span { display: none; }
+  .loop li + li::before { display: none; }
+  .step { padding: 44px 0; }
+  .chain .g { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .slide input { width: 100px; }
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="top" aria-label="Site">
+    <a href="https://dhyey-acharya.com">Dhyey Acharya</a>
+    <span>Project 03 · Parametric drawer system</span>
+  </nav>
+  <header class="hero">
+    <span class="eyebrow">Generative design · Photo to printable parts</span>
+    <h1>A drawer organizer, generated from one photo</h1>
+    <p class="dek">Photograph an empty drawer with a coin on its floor. The tool measures the floor from the coin, generates layouts that tile it exactly, shapes every container from a few parameters, joins neighbours with snap-fit connectors, and exports labelled, print-ready STL files with a plan to assemble them. The same rules drive a Grasshopper definition, so the web tool and the CAD model agree.</p>
+    <div class="cta">
+      <a class="btn primary" href="tool/">Open the tool <span aria-hidden="true">→</span></a>
+      <a class="btn" href="#s1">How it works</a>
+    </div>
+    <figure class="hero-fig">
+      <img src="hero.jpg" width="2400" height="1200" alt="A wooden drawer filled with seven 3D-printed containers: warm-white Standard boxes with straight and slanted walls, and pale blue Dome containers whose floors curve into bowls holding coins, AA batteries and SD cards">
+      <figcaption><span>Rendered from the tool's own geometry · 18 × 12 in drawer, 7 containers, 8 connectors under the floor</span><span>Blue = Dome (bowl floor) · white = Standard</span></figcaption>
+    </figure>
+    <ol class="loop" aria-label="The pipeline">
+      <li><a href="#s1"><span>01</span>Measure</a></li>
+      <li><a href="#s2"><span>02</span>Generate</a></li>
+      <li><a href="#s3"><span>03</span>Shape</a></li>
+      <li><a href="#s4"><span>04</span>Connect</a></li>
+      <li><a href="#s5"><span>05</span>Label</a></li>
+      <li><a href="#s6"><span>06</span>Print</a></li>
+      <li><a href="#s7"><span>07</span>Grasshopper</a></li>
+    </ol>
+    <div class="facts">
+      <div><b>1 photo</b><span>and a US coin are the only measuring tools</span></div>
+      <div><b>5 layouts</b><span>generated per request, each tiling the floor exactly</span></div>
+      <div><b>6 parameters</b><span>shape a container: size, type, slant, blend, bowl, name</span></div>
+      <div><b>0 supports</b><span>for Standard containers printed rim-down</span></div>
+    </div>
+  </header>
+</div>
+
+<main class="wrap">
+
+  <!-- 01 MEASURE -->
+  <section class="step" id="s1" aria-labelledby="h1s">
+    <div class="cap">
+      <span class="num">01 · Measure</span>
+      <h2 id="h1s">A coin and four corners undo the camera</h2>
+      <p>A phone photo of a drawer is a perspective projection: parallel edges converge and a round coin looks like an oval. Projective geometry reverses it. The four floor corners define a <b>homography</b>, a 3 × 3 matrix that maps the photographed floor back onto a flat unit square.</p>
+      <p>Once the floor is flat, the only distortion left is that its width and depth were squeezed into the same unit. A circle on the floor therefore becomes an axis-aligned ellipse, and its two radii say exactly how much: <i>W = d / 2a</i> and <i>D = d / 2b</i>, with <i>d</i> the coin's known diameter.</p>
+      <p class="how">The coin's rim is found by colour, not brightness: rays from the tapped centre walk outward until pixels match the floor's <i>chromaticity</i>, which survives shadows. An ellipse is fitted to the hits by <i>least squares</i>, the worst quarter dropped, and fitted again.</p>
+    </div>
+    <div class="vis">
+      <div class="card">
+        <div class="ctrls">
+          <div class="ctl slide"><span class="lab">Camera tilt</span><input type="range" id="m-tilt" min="18" max="72" value="38" aria-label="Camera tilt"><output id="m-tilt-o">38°</output></div>
+          <div class="ctl slide"><span class="lab">Turn</span><input type="range" id="m-yaw" min="-30" max="30" value="12" aria-label="Camera turn"><output id="m-yaw-o">12°</output></div>
+          <div class="ctl slide"><span class="lab">Rim noise</span><input type="range" id="m-noise" min="0" max="12" value="3" step="0.5" aria-label="Rim detection noise, percent of the coin radius"><output id="m-noise-o">3 %</output></div>
+        </div>
+        <div class="duo">
+          <figure class="fig" style="margin:0"><svg id="m-photo" viewBox="0 0 400 300" role="img" aria-label="The drawer floor in perspective, as the phone sees it, with the coin and the detected rim points"></svg><figcaption><span>What the phone sees</span></figcaption></figure>
+          <figure class="fig" style="margin:0"><svg id="m-flat" viewBox="0 0 400 300" role="img" aria-label="The floor mapped back onto a unit square, where the coin becomes an axis-aligned ellipse"></svg><figcaption><span>The same floor as a unit square: the coin becomes an ellipse</span></figcaption></figure>
+        </div>
+        <p class="stats" id="m-stats"></p>
+        <p class="formula">rim → H<sup>−1</sup> → fit A x² + C y² + D x + E y = 1 → W = d / 2a, D = d / 2b</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 GENERATE -->
+  <section class="step" id="s2" aria-labelledby="h2s">
+    <div class="cap">
+      <span class="num">02 · Generate</span>
+      <h2 id="h2s">Five ways to cut a floor into containers</h2>
+      <p>The generator solves a <b>constrained space-partitioning</b> problem. The drawer floor has to be covered completely, by exactly <i>n</i> rectangles, none smaller than 3 × 3 in, with every edge on a 0.5 in grid so containers line up and remain easy to edit.</p>
+      <p>Each layout is a <b>guillotine partition</b>: a cut runs across the whole remaining rectangle, splitting it in two, and each half is cut again recursively. Five strategies choose the cuts differently: an even grid, columns, rows, one large container with small ones, and a mixed recursion that picks the axis and count at random.</p>
+      <p class="how">Randomness comes from a <i>seeded</i> generator (Mulberry32), so <i>Regenerate</i> gives five new layouts while any one stays reproducible. Every candidate is checked: no overlaps, every container at least 3 in, and areas that add up to the floor. Before a cut is made, a capacity test (<i>⌊w/3⌋ · ⌊d/3⌋ ≥ n</i>) rules out halves that could never fit their share.</p>
+    </div>
+    <div class="vis">
+      <div class="card">
+        <div class="ctrls">
+          <div class="ctl slide"><span class="lab">Containers</span><input type="range" id="g-n" min="2" max="16" value="7" aria-label="Number of containers"><output id="g-n-o">7</output></div>
+          <button class="btn" type="button" id="g-regen" style="padding:7px 12px;font-size:13px">Regenerate</button>
+        </div>
+        <div class="opts" id="g-opts"></div>
+        <p class="stats" id="g-stats"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 SHAPE -->
+  <section class="step" id="s3" aria-labelledby="h3s">
+    <div class="cap">
+      <span class="num">03 · Shape</span>
+      <h2 id="h3s">Rims tile the drawer; everything else is derived</h2>
+      <p>The user edits each container's <b>rim</b>, the outline seen from above, because rims are what must tile the drawer. Every other dimension follows from the parameters: the base is the rim pulled in by the wall <b>slant</b>, the <b>blend</b> rounds the corners and the wall-to-floor curve with one radius, and one <b>wall</b> thickness, 1.5 mm by default, shells every container. Heights count down from the drawer: the 1/4 in track base and the body together fill the drawer's height less 1/4 in of headroom.</p>
+      <p>A <b>Dome</b> container keeps the same outside but its floor is a bowl, so small parts slide to the middle and can be scooped out. The bowl is the Project 01 dome curve turned upside down: a degree-5 Bézier profile that leaves the wall steeply and flattens to zero slope at the centre.</p>
+      <p class="how">Constraints keep the parameters honest: slant is capped so the base stays ≥ 2.3 in wide for its track, blend is capped at 45 % of the base and the height, and the bowl is never so shallow that it cuts through the blended outer wall.</p>
+    </div>
+    <div class="vis">
+      <div class="card">
+        <div class="ctrls">
+          <div class="ctl"><span class="lab">Type</span><div class="seg" id="c-type"><button type="button" data-t="standard" aria-pressed="false">Standard</button><button type="button" data-t="dome" aria-pressed="true">Dome</button></div></div>
+          <div class="ctl slide"><span class="lab">Slant</span><input type="range" id="c-slant" min="0" max="1.2" step="0.05" value="0" aria-label="Wall slant in inches"><output id="c-slant-o"></output></div>
+          <div class="ctl slide"><span class="lab">Blend</span><input type="range" id="c-blend" min="0.0625" max="1.5" step="0.0625" value="0.5" aria-label="Blend radius in inches"><output id="c-blend-o"></output></div>
+          <div class="ctl slide"><span class="lab">Wall</span><input type="range" id="c-wall" min="0.8" max="3" step="0.1" value="1.5" aria-label="Wall thickness in millimetres"><output id="c-wall-o"></output></div>
+          <div class="ctl slide" id="c-bowl-w"><span class="lab">Bowl</span><input type="range" id="c-bowl" min="0.5" max="2.9" step="0.05" value="1.6" aria-label="Bowl depth in inches"><output id="c-bowl-o"></output></div>
+        </div>
+        <svg id="c-sec" viewBox="0 0 720 400" role="img" aria-label="Section through a 6 by 5 inch container: outer wall, inner surface, bowl and the track underneath, to scale"></svg>
+        <p class="stats" id="c-stats"></p>
+        <p class="formula">z(s) = z<sub>E</sub> − b · Q(s/2) / Q(½), &nbsp;Q = Bernstein degree 5, c = [0, F, 1, 1, F, 0], F = 1.8</p>
+      </div>
+      <figure class="photo"><img src="under.jpg" width="2000" height="1333" loading="lazy" alt="A pale blue Dome container turned over, rim down as it prints, showing the closed track loop on its underside and C01 COINS debossed in the middle; behind it an upright slanted Standard container, in front a cobalt snap-fit connector"><figcaption class="key" style="margin-top:8px">As it prints: rim down, so the track and the debossed label come out on top. A connector lies in front, strap down.</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- 04 CONNECT -->
+  <section class="step" id="s4" aria-labelledby="h4s">
+    <div class="cap">
+      <span class="num">04 · Connect</span>
+      <h2 id="h4s">A graph of neighbours, joined on the shortest line</h2>
+      <p>Containers with straight walls sit flush and hold each other in place. Slanted walls leave a gap between bases, so those neighbours need joining. The tool builds an <b>adjacency graph</b> from the rims: two containers are neighbours when they share at least 0.75 in of edge, and an edge needs a connector when either side is slanted.</p>
+      <p>Under every base runs one closed <b>track</b>: an outer wall, a 0.5 in channel and an inner wall, each an inward offset of the base outline. A connector is two snap buttons and a strap. Its buttons sit on the <b>shortest line</b> between the two facing channels: straight across the overlap of the two sides when they share one, otherwise diagonally between their nearest ends.</p>
+      <p class="how">Rules on the graph: every side that meets a neighbour keeps at least one connector, two buttons on one side stay 1.25 in apart (room for their spring arms), and a button stays 0.6 in clear of a corner, and a strap may pass under any outer wall (the slit runs all the way round) but never into a third container's inner wall.</p>
+    </div>
+    <div class="vis">
+      <div class="card">
+        <div class="ctrls">
+          <div class="ctl"><span class="lab">Walls</span><div class="seg" id="k-mode"><button type="button" data-k="design" aria-pressed="true">As designed</button><button type="button" data-k="straight" aria-pressed="false">All straight</button><button type="button" data-k="slanted" aria-pressed="false">All slanted</button></div></div>
+        </div>
+        <svg id="k-plan" viewBox="0 0 720 480" role="img" aria-label="Plan of the rendered layout showing each container's base, its closed track loop, the connectors between slanted neighbours and the flush edges between straight ones"></svg>
+        <p class="stats" id="k-stats"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 LABEL -->
+  <section class="step" id="s5" aria-labelledby="h5s">
+    <div class="cap">
+      <span class="num">05 · Label</span>
+      <h2 id="h5s">Letters cut into a watertight mesh</h2>
+      <p>Every part is debossed 0.5 mm deep with its number and an optional name: <b>C01 COINS</b> under a container, <b>K03 C02-C06</b> under a connector strap. The letters come from IBM Plex Mono Bold, stored as polygons, and are mirrored so they read with the part turned over.</p>
+      <p>Cutting text into a mesh without a CAD kernel is a geometry problem. The underside face becomes a polygon with a hole for every letter; it is split into triangles by <b>ear clipping</b> with hole bridging (earcut), each letter gets a ceiling 0.5 mm up, and walls join the two. A letter's counters, the inside of an O or an A, stay at the surface as islands.</p>
+      <p class="how">A mesh only prints if it is closed: every edge shared by exactly two faces, in opposite directions. Letters that share a baseline put many vertices on one exact line, which can trip the triangulator, so each vertex is moved by a few millionths of an inch first. 700 random labels in the test suite all come out closed.</p>
+    </div>
+    <div class="vis">
+      <div class="card">
+        <div class="card-hd"><h3>Underside face, triangulated around the letters</h3><span class="lab" id="l-count"></span></div>
+        <svg id="l-mesh" viewBox="0 0 720 300" role="img" aria-label="The flat underside of a container split into triangles around the debossed letters C01 COINS, with the letter pockets filled in cobalt"></svg>
+        <p class="stats" id="l-stats"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 PRINT -->
+  <section class="step" id="s6" aria-labelledby="h6s">
+    <div class="cap">
+      <span class="num">06 · Print</span>
+      <h2 id="h6s">A snap fit, not a wedge</h2>
+      <p>Each part leaves as a binary STL in millimetres, named by number, name and size. Containers print <b>rim-down</b>: the open top sits on the bed and the underside, with its track and label, is printed last as a crisp top surface. Standard containers need no supports; a Dome needs a little under the flat middle of its bowl.</p>
+      <p>A connector has to click in, not be forced in. Its button has a <b>core</b> with a rounded top that finds its own way into the channel, then slides between the track's beads with 0.01 in to spare, so it never binds. Two <b>spring arms</b>, 0.9 mm thick, run along the channel from the core, one toward each wall, and end in small <b>hooks</b>. Pressing a container onto the button, the bead rides down each hook's 30° lead-in and pushes the arm in by 0.64 mm; past the bead, the arm springs back and the hook sits above it.</p>
+      <p class="how">The arm is a cantilever: for a bending deflection <i>δ</i>, the peak strain is <i>ε = 3δt / 2L²</i>. With <i>t</i> = 0.9 mm and a free length <i>L</i> = 9.7 mm, the snap strains the plastic about 0.9 %, well inside what PLA and PETG take repeatedly. The arms run along the channel rather than standing up, so they are long even though the track is only a quarter inch tall; they print standing free on the bed, so nothing ties them down.</p>
+    </div>
+    <div class="vis">
+      <div class="card">
+        <div class="card-hd"><h3>One button in its channel, from above</h3><span class="lab">to scale · 1 in = 330 px</span></div>
+        <svg id="p-plan" viewBox="0 0 720 360" role="img" aria-label="Plan view of a snap button in its track channel: the core between the bead crests, two spring arms along the channel with hooks reaching past the beads, and the strap leaving under the outer wall"></svg>
+        <p class="key">The hooks reach 0.025 in past the bead crests (dashed). Pressing in, each arm bends toward the core; once past, it springs back and the hook rests on top of the bead.</p>
+      </div>
+      <div class="duo">
+        <div class="card">
+          <div class="card-hd"><h3>Section through a hook</h3></div>
+          <svg id="p-hook" viewBox="0 0 360 300" role="img" aria-label="Section through the spring arm's hook seated above the outer wall's bead, with the arm's flexed position while passing shown dashed"></svg>
+        </div>
+        <div class="card">
+          <div class="card-hd"><h3>Snap strain by arm length</h3></div>
+          <svg id="p-strain" viewBox="0 0 360 300" role="img" aria-label="Peak strain of the spring arm against its free length for a 0.64 mm snap: about 0.9 % at the chosen 9.7 mm, far above the PLA limit if the arm were as short as the track is tall"></svg>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><h3>Section across the gap: strap under both outer walls</h3><span class="lab">to scale · 1 in = 165 px</span></div>
+        <svg id="p-sec" viewBox="0 0 720 250" role="img" aria-label="Cross-section of two slanted neighbours' tracks with a connector between them: the cores in the channels and the strap passing under the outer walls through the slit"></svg>
+      </div>
+      <div class="card tw">
+        <table class="tbl">
+          <thead><tr><th>Feature</th><th>Value</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Core vs bead crests</td><td class="n">⌀ 0.38 / 0.40 in</td><td>0.01 in each side: the button slides along the channel and never wedges.</td></tr>
+            <tr><td>Spring arm</td><td class="n">0.9 × 9.7 mm</td><td>Bends 0.64 mm to pass the bead at about 0.9 % strain.</td></tr>
+            <tr><td>Hook</td><td class="n">0.025 in past the bead</td><td>30° lead-in on top cams the arm in; a 45° face below lets the part be pulled off again.</td></tr>
+            <tr><td>Seated play</td><td class="n">0.01 in</td><td>The hook sits just clear of the bead, so nothing is preloaded.</td></tr>
+            <tr><td>Arm direction</td><td class="n">away from the strap</td><td>The outer arm points away from the way a diagonal strap leans, so the strap never runs along it.</td></tr>
+            <tr><td>Strap vs slit</td><td class="n">0.098 / 0.1 in</td><td>0.002 in less than the slit, so it passes under the outer wall.</td></tr>
+            <tr><td>Snap bead</td><td class="n">r 0.05 in</td><td>Whole on the inner wall, upper half on the outer wall over the slit.</td></tr>
+            <tr><td>Wall and floor</td><td class="n">1.5 mm · 0.8–3</td><td>One slider for every container. 1.5 mm is three or four perimeters at a 0.4 mm nozzle: stiff, light, quick.</td></tr>
+            <tr><td>Label depth</td><td class="n">0.5 mm</td><td>Two or three layers: legible, and the floor keeps 1 mm.</td></tr>
+            <tr><td>Fit gap · headroom</td><td class="n">1/16 in · 1/4 in</td><td>The organizer drops into the drawer, and the drawer still closes.</td></tr>
+            <tr><td>Height</td><td class="n">base + body</td><td>The 1/4 in track base counts toward the drawer height you enter: base + body = drawer height − headroom.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 07 GRASSHOPPER -->
+  <section class="step" id="s7" aria-labelledby="h7s">
+    <div class="cap">
+      <span class="num">07 · Grasshopper</span>
+      <h2 id="h7s">One layout file, six groups of components</h2>
+      <p>The system began as a Grasshopper definition: one container, its tracks and one connector, driven by sliders. To run it for any layout, every block was made to work per container. A <b>layout.json</b> exported by the web tool is read once, each container is <b>grafted</b> onto its own branch of a data tree, and the original chains run for all of them at once.</p>
+      <p>The web kernel and the definition follow the same rules, so they act as a check on each other: the app's 5 × 5 in Dome in a 4 in drawer measures 127 × 127 × 95.25 mm, and matching bounding boxes mean the two agree.</p>
+      <p class="how">Where the original definition used fixed indices (fillet edges 0 2 6 7 8 9 10 11, shell face 1), the per-container version picks by geometry instead: bottom edges by midpoint height, the top face by centroid. Indices change whenever a loft does.</p>
+    </div>
+    <div class="vis">
+      <div class="chain">
+        <div class="g"><b><small>A</small>Read</b><p><code>File Path</code> → <code>Read File</code> → <code>Python 3 Script</code> unpacks base planes, sizes, draft, blend, bowl and track offsets from layout.json; <code>Graft</code> puts each container on branch {i}.</p></div>
+        <div class="g"><b><small>B</small>Body</b><p><code>Rectangle</code> (radius = blend) → <code>Move</code> up → <code>Offset</code> by the draft → <code>Loft</code> → <code>Cap Holes</code> → <code>Fillet Edge</code> on the bottom edges. Standard: <code>Shell</code> 1.5 mm. Dome: loft the bowl's sections from the Bézier curve and <code>Solid Difference</code> the cavity; <code>Stream Filter</code> picks per branch.</p></div>
+        <div class="g"><b><small>C</small>Tracks</b><p>Four inward <code>Offset</code> curves of the base → <code>Boundary Surfaces</code> → <code>Extrude</code> → <code>Solid Difference</code> with the body so the walls meet its underside; <code>Pipe</code> the beads, cut the slit all the way round, <code>Solid Union</code> with the body.</p></div>
+        <div class="g"><b><small>D</small>Connectors</b><p>At each point a <code>Cylinder</code> core, two arm <code>Box</code>es oriented along the channel, and hooks as an <code>Extrude</code>d section; strap as <code>Rectangle 3Pt</code> → <code>Extrude</code> → <code>Solid Union</code>. Without the app, <code>Curve Proximity</code> between two facing centre lines finds the same shortest line.</p></div>
+        <div class="g"><b><small>E</small>Labels</b><p><code>Curve.CreateTextOutlines</code> in a Python component, mirrored and placed from the label's centre and angle → <code>Boundary Surfaces</code> → <code>Extrude</code> 0.5 mm → <code>Solid Difference</code>.</p></div>
+        <div class="g"><b><small>F</small>Export</b><p>Centre each part at the origin, <code>Scale</code> by 25.4 (the model is in inches, slicers read millimetres), bake with names, one STL per part.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="outputs" aria-labelledby="ho">
+    <span class="num">Outputs</span>
+    <h2 id="ho">Everything the printer and the drawer need, in one ZIP</h2>
+    <div class="trio">
+      <figure><img src="plan.jpg" width="1600" height="1236" loading="lazy" alt="Sheet 1 of the printable plan: the drawer drawn to scale 1:3 with every container's number, name, size and type, the connectors in cobalt, dimensions and a scale bar"><figcaption>plan.pdf · sheet 1 of 2, drawn at a standard scale with a parts schedule on sheet 2</figcaption></figure>
+      <figure><pre id="o-json" aria-label="An excerpt of layout.json"></pre><figcaption>layout.json · the hand-off to Grasshopper, in inches</figcaption></figure>
+      <figure><ul id="o-files" aria-label="STL files in the ZIP"></ul><figcaption>One STL per part, in millimetres, plus parts.txt</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="method" aria-labelledby="hm">
+    <span class="num">Method</span>
+    <h2 id="hm">The algorithms, in order</h2>
+    <ol>
+      <li><b>Homography from four points</b><p>Square-to-quad projective map (Heckbert) from the corner pins; its inverse rectifies every rim point.</p></li>
+      <li><b>Rim by chromaticity</b><p>Coin and floor colours sampled as normalised RGB plus a little brightness; rays stop after four floor-coloured samples in a row.</p></li>
+      <li><b>Robust ellipse fit</b><p>Linear least squares for an axis-aligned conic, then the worst 25 % of points dropped and the fit repeated.</p></li>
+      <li><b>Guillotine partition</b><p>Recursive straight cuts with a capacity test, grid snapping and five strategies, seeded by Mulberry32 so each layout can be reproduced.</p></li>
+      <li><b>Offset profiles</b><p>Each container is a sweep of rounded-rectangle rings along its wall profile; the inner surface is that profile offset by the wall thickness.</p></li>
+      <li><b>Bézier bowl</b><p>The degree-5 Bernstein curve from Project 01, halved, normalised and inverted; sections crowd where it is steepest.</p></li>
+      <li><b>Adjacency and shortest lines</b><p>Shared rim edges form the neighbour graph; connector points come from the overlap of facing channel centre lines, or their nearest ends.</p></li>
+      <li><b>Cantilever snap fit</b><p>Spring arms sized by ε = 3δt / 2L²: long and thin along the channel, so a 0.64 mm snap stays under 1 % strain.</p></li>
+      <li><b>Text to triangles</b><p>Font outlines as polygons, mirrored, triangulated by earcut with holes, then closed into pockets and checked edge by edge.</p></li>
+      <li><b>Binary STL and vector PDF</b><p>Both written in the browser with no libraries: STL triangles scaled to millimetres, and a two-sheet PDF in Helvetica at a printed scale.</p></li>
+      <li><b>Grasshopper per container</b><p>The same rules as data trees: one branch per container, geometry picked by position rather than index, layout.json as the shared source.</p></li>
+    </ol>
+    <p class="note"><b>Credits.</b> Concept, form logic and the Grasshopper definition by Dhyey Acharya. The web tool and its geometry kernel were developed with the assistance of Claude, translating the .ghx definition into JavaScript. The hero images are Cycles renders of meshes exported by that kernel.</p>
+    <div class="closer">
+      <p>Measure a drawer and print an organizer for it.</p>
+      <a class="btn primary" href="tool/">Open the tool <span aria-hidden="true">→</span></a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Dhyey Acharya · Parametric drawer system · 2026</span>
+    <span><a href="https://dhyeyacharya.github.io/lab/">Project 01 · Shell texture study</a> &nbsp;·&nbsp; <a href="https://dhyeyacharya.github.io/lab/validation/">Project 02 · Computational validation</a> &nbsp;·&nbsp; <a href="https://dhyey-acharya.com">All work</a></span>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script>
+// IBM Plex Mono Bold, uppercase subset as polygons (font units). SIL Open Font License 1.1, (c) IBM Corp.
+const K_FONT = {"upm":1000,"cap":698,"adv":600,"g":{"A":[[[[391,168],[200,168],[157,0],[5,0],[194,698],[406,698],[595,0],[435,0]],[[292,553],[224,289],[368,289],[300,553]]]],"B":[[[[322,698],[397,690],[456,666],[499,627],[525,575],[534,512],[532,484],[517,436],[488,400],[469,386],[420,365],[420,359],[451,350],[501,322],[536,281],[554,226],[554,158],[547,127],[520,74],[500,52],[477,33],[418,8],[345,0],[77,0],[77,698]],[[299,105],[358,113],[378,123],[392,138],[400,160],[403,189],[400,247],[392,269],[378,284],[332,300],[223,302],[223,105]],[[280,402],[338,410],[357,420],[370,434],[378,456],[381,483],[378,540],[370,561],[357,576],[338,585],[312,591],[223,593],[223,402]]]],"C":[[[[316,-12],[242,-4],[209,5],[153,36],[108,82],[75,143],[63,178],[47,257],[41,349],[47,441],[53,482],[75,555],[108,616],[129,641],[180,679],[242,702],[316,710],[382,704],[412,696],[438,685],[483,655],[502,636],[532,592],[563,509],[423,475],[409,521],[388,557],[358,580],[337,587],[285,586],[261,577],[241,562],[226,542],[215,515],[203,450],[201,288],[203,248],[215,183],[241,136],[261,121],[285,112],[313,109],[345,113],[370,123],[388,141],[403,164],[423,223],[563,189],[532,106],[502,61],[483,42],[462,26],[412,2],[382,-6]]]],"D":[[[[289,698],[375,688],[412,676],[445,658],[473,636],[498,608],[531,550],[554,479],[565,396],[560,259],[544,182],[531,148],[498,90],[473,63],[445,40],[412,22],[334,2],[64,0],[64,698]],[[310,121],[337,129],[359,142],[377,161],[400,214],[408,286],[408,413],[400,484],[377,537],[359,556],[337,569],[310,577],[212,580],[212,118]]]],"E":[[[[80,0],[80,698],[526,698],[526,575],[230,575],[230,415],[516,415],[516,292],[230,292],[230,123],[526,123],[526,0]]]],"F":[[[[80,0],[80,698],[543,698],[543,575],[230,575],[230,415],[510,415],[510,292],[230,292],[230,0]]]],"G":[[[[411,99],[402,99],[380,57],[360,32],[320,4],[267,-11],[213,-9],[156,12],[119,42],[89,82],[65,133],[48,194],[36,303],[40,438],[56,519],[83,587],[124,644],[151,668],[183,686],[218,700],[258,707],[336,708],[367,704],[422,684],[446,671],[485,636],[515,591],[537,538],[545,509],[405,475],[392,518],[372,554],[342,580],[298,589],[272,586],[249,577],[231,563],[207,516],[195,450],[196,256],[200,220],[220,160],[235,138],[255,122],[280,112],[310,109],[341,112],[366,122],[386,139],[400,161],[408,187],[411,267],[292,267],[292,373],[545,373],[545,0],[411,0]]]],"H":[[[[388,292],[212,292],[212,0],[61,0],[61,698],[212,698],[212,415],[388,415],[388,698],[539,698],[539,0],[388,0]]]],"I":[[[[75,0],[75,111],[225,111],[225,587],[75,587],[75,698],[525,698],[525,587],[375,587],[375,111],[525,111],[525,0]]]],"J":[[[[511,698],[511,195],[504,136],[482,85],[466,63],[426,27],[374,2],[344,-6],[278,-12],[237,-10],[200,-3],[138,22],[112,42],[72,90],[58,118],[38,182],[180,211],[197,159],[210,138],[228,122],[250,113],[278,110],[302,113],[321,121],[338,134],[349,154],[359,210],[359,575],[129,575],[129,698]]]],"K":[[[[280,291],[218,204],[218,0],[68,0],[68,698],[218,698],[218,406],[226,406],[425,698],[593,698],[384,403],[603,0],[434,0]]]],"L":[[[[92,0],[92,698],[243,698],[243,123],[543,123],[543,0]]]],"M":[[[[431,311],[439,506],[430,506],[300,147],[170,506],[161,506],[169,311],[169,0],[39,0],[39,698],[216,698],[302,463],[310,463],[396,698],[561,698],[561,0],[431,0]]]],"N":[[[[200,464],[189,464],[189,0],[61,0],[61,698],[241,698],[400,234],[411,234],[411,698],[539,698],[539,0],[359,0]]]],"O":[[[[262,-10],[193,5],[164,19],[114,58],[76,112],[49,178],[32,257],[27,349],[32,441],[49,520],[76,586],[114,640],[138,662],[194,693],[226,702],[262,708],[339,708],[374,702],[436,679],[486,640],[524,586],[551,520],[568,441],[573,349],[568,257],[551,178],[524,112],[486,58],[462,36],[406,5],[374,-4],[338,-10]],[[330,112],[354,121],[374,136],[388,156],[407,213],[413,289],[411,450],[399,515],[388,542],[374,562],[354,577],[330,586],[300,589],[270,586],[246,577],[226,562],[212,542],[201,515],[189,450],[189,248],[201,183],[212,156],[226,136],[246,121],[270,112]]]],"P":[[[[76,698],[346,698],[379,696],[437,682],[462,671],[504,638],[535,594],[554,540],[558,509],[558,443],[546,384],[521,335],[485,296],[437,270],[379,256],[227,254],[227,0],[76,0]],[[308,375],[364,384],[382,395],[393,411],[400,433],[402,491],[393,541],[382,557],[364,568],[340,575],[227,577],[227,375]]]],"Q":[[[[384,-191],[315,-181],[289,-169],[269,-152],[244,-106],[237,-78],[235,-6],[201,3],[142,33],[96,78],[62,139],[40,213],[33,255],[27,349],[32,441],[49,520],[76,586],[114,640],[164,679],[194,693],[262,708],[339,708],[374,702],[436,679],[462,662],[486,640],[524,586],[551,520],[568,441],[573,349],[567,255],[560,213],[538,139],[504,78],[458,33],[399,3],[365,-6],[365,-84],[526,-84],[526,-191]],[[330,112],[354,121],[374,136],[388,156],[407,213],[413,289],[411,450],[399,515],[388,542],[374,562],[354,577],[330,586],[300,589],[270,586],[246,577],[226,562],[212,542],[201,515],[189,450],[189,248],[201,183],[212,156],[226,136],[246,121],[270,112]]]],"R":[[[[76,0],[76,698],[379,696],[409,691],[462,671],[504,638],[521,617],[546,568],[558,509],[558,440],[542,377],[510,325],[489,305],[437,279],[574,0],[410,0],[293,259],[224,259],[224,0]],[[342,377],[366,384],[384,395],[395,411],[404,461],[402,519],[395,541],[384,557],[366,568],[342,575],[224,577],[224,375]]]],"S":[[[[289,-12],[222,-7],[136,17],[88,44],[31,96],[118,192],[158,156],[202,130],[263,112],[294,110],[327,113],[354,121],[376,134],[392,152],[401,175],[404,203],[394,244],[382,259],[365,270],[341,279],[201,306],[170,317],[120,348],[83,396],[70,427],[62,461],[62,537],[70,572],[83,603],[101,630],[148,671],[175,685],[237,704],[272,708],[349,708],[386,704],[451,685],[505,656],[548,617],[463,522],[421,557],[371,580],[311,588],[275,585],[246,575],[226,558],[214,535],[210,505],[213,483],[220,465],[251,440],[306,424],[411,404],[467,381],[490,365],[530,320],[544,290],[553,254],[554,183],[548,153],[529,104],[504,68],[470,38],[428,14],[379,-2]]]],"T":[[[[375,575],[375,0],[225,0],[225,575],[24,575],[24,698],[576,698],[576,575]]]],"U":[[[[205,698],[208,196],[220,149],[231,132],[262,114],[300,109],[338,114],[369,132],[380,149],[392,196],[395,698],[545,698],[544,241],[536,150],[511,79],[484,43],[447,16],[398,-2],[336,-11],[264,-11],[176,6],[153,16],[116,43],[89,79],[70,124],[60,178],[56,241],[55,698]]]],"V":[[[[194,0],[9,698],[176,698],[258,343],[299,142],[307,142],[349,343],[432,698],[591,698],[406,0]]]],"W":[[[[54,0],[11,698],[140,698],[166,148],[175,148],[235,546],[370,546],[430,148],[439,148],[465,698],[589,698],[546,0],[356,0],[305,385],[295,385],[244,0]]]],"X":[[[[591,0],[420,0],[348,139],[299,249],[290,249],[240,139],[166,0],[9,0],[205,361],[22,698],[193,698],[301,475],[309,475],[361,587],[421,698],[578,698],[395,359]]]],"Y":[[[[225,0],[225,247],[4,698],[171,698],[245,536],[299,399],[307,399],[361,536],[435,698],[596,698],[375,247],[375,0]]]],"Z":[[[[551,0],[48,0],[48,131],[373,575],[58,575],[58,698],[541,698],[541,567],[216,123],[551,123]]]],"0":[[[[226,-4],[193,5],[138,36],[94,83],[61,143],[39,216],[28,302],[28,396],[39,482],[49,520],[76,586],[114,640],[138,662],[194,693],[226,702],[300,710],[374,702],[436,679],[462,662],[506,615],[539,555],[561,482],[572,396],[572,302],[561,216],[539,143],[524,112],[486,58],[462,36],[406,5],[374,-4],[300,-12]],[[331,109],[357,118],[378,132],[394,153],[413,209],[420,284],[418,454],[405,519],[394,545],[378,566],[357,580],[331,589],[269,589],[243,580],[222,566],[206,545],[187,489],[180,414],[182,244],[195,179],[206,153],[222,132],[243,118],[269,109]]]],"1":[[[[94,0],[94,121],[282,121],[282,589],[273,589],[131,403],[35,478],[202,698],[432,698],[432,121],[580,121],[580,0]]]],"2":[[[[555,0],[53,0],[53,137],[300,344],[355,405],[377,455],[380,491],[377,518],[368,540],[354,558],[335,570],[311,578],[253,577],[228,567],[207,551],[191,530],[169,482],[38,532],[58,578],[86,621],[124,657],[147,672],[200,696],[263,708],[336,708],[370,703],[423,685],[461,663],[496,630],[512,608],[533,557],[540,500],[534,445],[501,373],[472,335],[426,289],[219,126],[555,126]]]],"3":[[[[273,422],[336,432],[358,444],[372,460],[381,478],[384,498],[381,529],[373,549],[358,566],[339,578],[315,586],[286,588],[231,578],[187,555],[142,505],[47,593],[75,626],[125,666],[164,687],[210,702],[262,709],[329,709],[395,697],[450,675],[494,642],[524,601],[534,577],[542,525],[537,484],[523,448],[489,406],[458,386],[406,368],[406,362],[437,355],[490,328],[531,285],[544,259],[552,228],[553,164],[536,109],[497,58],[441,20],[394,2],[341,-8],[282,-12],[217,-7],[163,7],[117,28],[79,56],[24,122],[135,208],[176,152],[211,125],[233,117],[285,110],[318,113],[346,121],[368,135],[384,154],[394,177],[397,204],[393,237],[382,259],[364,276],[339,287],[308,295],[207,297],[207,422]]]],"4":[[[[339,134],[25,134],[25,262],[303,698],[483,698],[483,250],[573,250],[573,134],[483,134],[483,0],[339,0]],[[339,250],[339,543],[330,543],[146,250]]]],"5":[[[[525,567],[202,567],[186,346],[195,346],[220,390],[253,426],[281,442],[314,452],[354,456],[409,449],[460,430],[483,415],[522,377],[537,354],[559,299],[565,268],[565,200],[559,167],[539,114],[513,75],[478,42],[435,17],[385,-2],[327,-11],[262,-11],[204,-1],[155,17],[114,42],[80,72],[42,122],[151,208],[186,159],[220,130],[246,118],[296,110],[330,113],[358,124],[380,140],[396,163],[406,190],[409,230],[406,260],[396,286],[380,307],[358,323],[332,332],[300,335],[250,328],[214,308],[189,286],[66,303],[92,698],[525,698]]]],"6":[[[[273,-11],[217,-1],[146,31],[108,64],[66,126],[42,205],[38,265],[44,336],[61,404],[93,478],[151,567],[225,645],[293,698],[500,698],[359,591],[275,508],[244,465],[219,421],[195,348],[204,345],[226,384],[258,418],[286,434],[320,446],[391,448],[418,443],[468,423],[510,390],[527,370],[553,322],[567,264],[569,232],[561,165],[550,134],[527,92],[496,56],[458,28],[413,6],[361,-8]],[[336,108],[363,118],[385,134],[401,155],[410,182],[413,228],[410,260],[400,286],[384,308],[363,323],[336,332],[303,335],[271,332],[245,323],[223,308],[207,286],[197,260],[194,214],[197,182],[206,155],[222,134],[243,118],[270,108],[303,105]]]],"7":[[[[164,0],[404,576],[178,576],[178,449],[51,449],[51,698],[553,698],[553,568],[322,0]]]],"8":[[[[269,-11],[188,4],[123,33],[84,65],[67,87],[44,136],[36,192],[38,224],[58,279],[96,321],[120,337],[175,360],[175,368],[150,379],[108,408],[76,447],[59,497],[59,552],[73,600],[85,622],[120,658],[142,674],[196,696],[228,704],[262,708],[337,709],[404,696],[458,674],[499,641],[527,600],[536,577],[543,526],[535,470],[524,447],[492,408],[472,392],[425,368],[425,360],[454,350],[504,321],[542,279],[562,224],[562,163],[546,110],[533,87],[516,65],[477,33],[436,12],[387,-3],[331,-11]],[[268,106],[332,106],[358,114],[380,127],[395,145],[404,167],[407,212],[404,238],[395,260],[380,278],[359,291],[332,298],[268,298],[241,291],[220,278],[205,260],[196,238],[193,192],[196,167],[205,145],[220,127],[242,114]],[[269,414],[331,414],[356,421],[376,434],[390,451],[399,472],[402,496],[399,535],[390,556],[376,572],[355,585],[300,595],[245,585],[224,572],[210,556],[201,535],[198,511],[201,472],[210,451],[224,434],[244,421]]]],"9":[[[[561,397],[556,361],[539,294],[507,219],[449,131],[375,53],[307,0],[100,0],[241,107],[325,190],[356,233],[381,277],[405,350],[396,353],[374,314],[342,280],[298,257],[260,249],[209,250],[156,264],[110,290],[90,308],[59,351],[47,376],[33,434],[31,466],[33,500],[50,564],[73,606],[104,642],[142,670],[187,692],[267,709],[356,705],[432,680],[492,634],[534,572],[558,493]],[[329,366],[355,375],[377,390],[393,412],[403,438],[406,470],[403,516],[394,543],[378,564],[357,580],[330,590],[297,593],[264,590],[237,580],[215,564],[199,543],[190,516],[187,470],[190,438],[200,412],[216,390],[237,375],[264,366],[297,363]]]],"-":[[[[140,234],[140,376],[460,376],[460,234]]]],".":[[[[334,-9],[266,-9],[239,-1],[220,12],[198,49],[195,106],[206,147],[220,164],[239,178],[266,186],[334,186],[361,178],[380,164],[402,128],[405,71],[394,30],[380,12],[361,-1]]]],"&":[[[[177,-10],[124,4],[81,31],[49,68],[36,89],[20,137],[14,190],[16,220],[31,276],[61,323],[81,344],[132,381],[93,443],[74,485],[69,509],[69,558],[73,581],[93,624],[106,643],[141,674],[184,696],[209,704],[262,710],[309,705],[352,692],[403,660],[428,632],[453,586],[351,531],[331,568],[301,592],[283,598],[245,598],[229,592],[205,569],[197,535],[201,504],[222,465],[337,317],[385,243],[391,243],[396,280],[402,402],[580,402],[580,292],[510,292],[495,226],[469,158],[599,0],[441,0],[361,97],[354,97],[339,52],[326,33],[287,4],[237,-10]],[[266,103],[300,117],[321,141],[192,305],[165,271],[154,237],[150,198],[153,169],[161,144],[176,126],[194,112],[217,104]]]],"/":[[[[73,-138],[394,760],[527,760],[206,-138]]]],"+":[[[[236,62],[236,246],[62,246],[62,364],[236,364],[236,548],[364,548],[364,364],[538,364],[538,246],[364,246],[364,62]]]],"#":[[[[9,194],[9,304],[137,304],[152,394],[47,394],[47,504],[172,504],[206,698],[323,698],[200,0],[83,0],[117,194]]],[[[517,698],[483,504],[591,504],[591,394],[463,394],[448,304],[553,304],[553,194],[428,194],[394,0],[277,0],[400,698]]]],"(":[[[[174,311],[183,417],[210,517],[250,605],[302,682],[341,724],[382,760],[530,760],[441,686],[402,641],[368,592],[339,539],[317,483],[303,424],[298,362],[303,198],[317,139],[339,83],[368,30],[421,-42],[462,-84],[530,-138],[382,-138],[341,-103],[302,-60],[250,17],[210,105],[183,205]]]],")":[[[[426,311],[417,205],[390,105],[350,17],[298,-60],[259,-103],[218,-138],[70,-138],[158,-64],[198,-19],[232,30],[261,83],[283,139],[297,198],[302,260],[297,424],[283,483],[261,539],[232,592],[179,664],[137,706],[70,760],[218,760],[259,724],[298,682],[350,605],[390,517],[417,417]]]],"'":[[[[234,414],[234,740],[366,740],[366,414]]]],":":[[[[266,-9],[239,-1],[220,12],[198,49],[195,106],[206,147],[220,164],[239,178],[266,186],[334,186],[361,178],[380,164],[402,128],[405,71],[394,30],[380,12],[361,-1],[334,-9]]],[[[266,330],[239,338],[220,352],[198,388],[195,445],[206,486],[220,504],[239,517],[266,525],[334,525],[361,517],[380,504],[402,467],[405,410],[394,369],[380,352],[361,338],[334,330]]]],"_":[[[[60,-192],[60,-71],[540,-71],[540,-192]]]],"\u00b7":[[[[334,207],[266,207],[239,215],[220,228],[198,265],[195,322],[206,363],[220,380],[239,394],[266,402],[334,402],[361,394],[380,380],[402,344],[405,287],[394,246],[380,228],[361,215]]]]}};
+if (typeof module !== 'undefined') module.exports = K_FONT;
+
+</script>
+<script>
+// ============================================================================
+// Geometry + logic kernel. Units: inches. No DOM or three.js, so it runs in node.
+// World frame matches the Grasshopper file: X right, Y toward the back of the
+// drawer, Z up, Z = 0 at the underside of a container's floor (its base). The
+// tracks hang below it to Z = -trackH, which is where the drawer floor is.
+// Plan frame (what the UI edits): x right, y toward the FRONT (screen down),
+// origin at the back-left corner of the usable floor.
+// ============================================================================
+const K = (() => {
+  'use strict';
+  const MM = 1 / 25.4;
+
+  const COINS = [
+    { id: 'penny', name: 'Penny', d: 0.750 },
+    { id: 'nickel', name: 'Nickel', d: 0.835 },
+    { id: 'dime', name: 'Dime', d: 0.705 },
+    { id: 'quarter', name: 'Quarter', d: 0.955 },
+    { id: 'half', name: 'Half dollar', d: 1.205 },
+    { id: 'dollar', name: 'Dollar coin', d: 1.043 },
+  ];
+
+  // Defaults. Track and connector values are the sliders in Parametric Drawer System2.ghx.
+  const DEF = {
+    minBox: 3,              // smallest container rim, in
+    fitGap: 1 / 16,         // clearance to each drawer wall
+    headroom: 0.25,         // gap left under the drawer above
+    wall: 1.5 * MM,         // shell thickness (ghx: 1.5 mm)
+    blend: 0.5,             // default blend: corner radius and wall-to-floor curve (ghx Fillet Edge)
+    blendMin: 1 / 16,
+    blendMax: 1.5,
+    bowl: 1.5,              // default bowl depth of a Dome container
+    bowlMin: 0.5,
+    bowlFloor: 0.1,         // floor thickness under the lowest point of the bowl
+    trackH: 0.25,           // ghx: HEIGHT OF THE BASE FROM XY PLANE
+    slotW: 0.5,             // ghx: offset of the scaled edges (channel width)
+    ringT: 0.25,            // ghx: THICKNESS OF THE BASE (ring wall)
+    beadR: 0.05,            // ghx: pipe radius (snap bead)
+    slitH: 0.10,            // ghx: HEIGHT OF THE SLIT AND SNAP PIPE
+    btnTopTol: 0.01,        // ghx: Tolerance on top of the button
+    btnFillet: 0.12,        // round on the button core's top edge (3 mm): guides the core into the bead throat
+    strapTol: 0.002,        // ghx: strap thickness = slit height - this
+    // snap-fit button: a core that slides between the beads, and two spring arms whose hooks
+    // flex past the beads and catch above them
+    coreClear: 0.01,        // core radius = channel half-width - bead protrusion - this
+    armT: 0.035,            // spring arm thickness (0.9 mm), flexes sideways
+    armReach: 0.55,         // arm tip, along the channel from the button centre
+    armOut: 0.165,          // arm's outer face, across the channel from the centre
+    barbOut: 0.225,         // hook tip across the channel: 0.025 in past the bead crest
+    barbLen: 0.08,          // hook length along the channel
+    strapW: 0.34,           // strap width (narrower than the core)
+    domeF: 1.8,             // texture study dome: crown fullness
+    minBase: 2.3,           // smallest base that still fits the track loop
+    loopEnd: 0.6,           // button centres stay this far from a loop corner (its arms reach 0.55)
+    connGap: 1.25,          // minimum spacing of two button centres on one side
+    minShared: 0.75,        // shared rim length below which two containers are not neighbors
+    labelDepth: 0.5 * MM,   // debossed label depth
+    labelMinCap: 0.09,      // smallest letters worth printing (about 2.3 mm)
+    labelMaxCap: 0.35,      // largest letters on a container
+    connLabelMaxCap: 0.2,   // largest letters on a strap
+  };
+
+  // ---------------------------------------------------------------- measuring
+  // Homography that maps the unit square onto a quad p0..p3 = (0,0) (1,0) (1,1) (0,1).
+  function squareToQuad(q) {
+    const [x0, y0] = q[0], [x1, y1] = q[1], [x2, y2] = q[2], [x3, y3] = q[3];
+    const sx = x0 - x1 + x2 - x3, sy = y0 - y1 + y2 - y3;
+    let a, b, c, d, e, f, g, h;
+    if (Math.abs(sx) < 1e-9 && Math.abs(sy) < 1e-9) {
+      a = x1 - x0; b = x2 - x1; c = x0; d = y1 - y0; e = y2 - y1; f = y0; g = 0; h = 0;
+    } else {
+      const dx1 = x1 - x2, dx2 = x3 - x2, dy1 = y1 - y2, dy2 = y3 - y2;
+      const den = dx1 * dy2 - dx2 * dy1;
+      g = (sx * dy2 - dx2 * sy) / den;
+      h = (dx1 * sy - sx * dy1) / den;
+      a = x1 - x0 + g * x1; b = x3 - x0 + h * x3; c = x0;
+      d = y1 - y0 + g * y1; e = y3 - y0 + h * y3; f = y0;
+    }
+    return [a, b, c, d, e, f, g, h, 1];
+  }
+  const applyH = (H, u, v) => {
+    const w = H[6] * u + H[7] * v + H[8];
+    return [(H[0] * u + H[1] * v + H[2]) / w, (H[3] * u + H[4] * v + H[5]) / w];
+  };
+  function invert3(m) {
+    const [a, b, c, d, e, f, g, h, i] = m;
+    const A = e * i - f * h, B = -(d * i - f * g), C = d * h - e * g;
+    const det = a * A + b * B + c * C;
+    return [A / det, -(b * i - c * h) / det, (b * f - c * e) / det,
+            B / det, (a * i - c * g) / det, -(a * f - c * d) / det,
+            C / det, -(a * h - b * g) / det, (a * e - b * d) / det];
+  }
+  // Put four corner pins in order: back-left, back-right, front-right, front-left
+  // (image top-left, top-right, bottom-right, bottom-left), whatever order they were placed in.
+  function orderQuad(pts) {
+    const cx = pts.reduce((s, p) => s + p[0], 0) / 4, cy = pts.reduce((s, p) => s + p[1], 0) / 4;
+    const s = pts.slice().sort((p, q) => Math.atan2(p[1] - cy, p[0] - cx) - Math.atan2(q[1] - cy, q[0] - cx));
+    // atan2 with screen y down: sorted from -PI (left) clockwise on screen; rotate so top-left is first
+    let k = 0, best = Infinity;
+    s.forEach((p, i) => { if (p[0] + p[1] < best) { best = p[0] + p[1]; k = i; } });
+    return [0, 1, 2, 3].map(i => s[(k + i) % 4]);
+  }
+  // Coin ring with half-widths a, b in unit-square coordinates -> floor size
+  const floorFromCoin = (coinD, a, b) => ({ w: coinD / (2 * a), d: coinD / (2 * b) });
+
+  // Least-squares axis-aligned ellipse A x^2 + C y^2 + D x + E y = 1 through points
+  function fitAxisEllipse(pts) {
+    if (pts.length < 5) return null;
+    const mx = pts.reduce((s, p) => s + p[0], 0) / pts.length, my = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+    const M = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], R = [0, 0, 0, 0];
+    for (const [px, py] of pts) {
+      const x = px - mx, y = py - my, row = [x * x, y * y, x, y];
+      for (let i = 0; i < 4; i++) { R[i] += row[i]; for (let j = 0; j < 4; j++) M[i][j] += row[i] * row[j]; }
+    }
+    const s = solve4(M, R);
+    if (!s) return null;
+    const [A, C, D, E] = s;
+    if (!(A > 0 && C > 0)) return null;
+    const cx = -D / (2 * A), cy = -E / (2 * C), F = 1 + A * cx * cx + C * cy * cy;
+    if (!(F > 0)) return null;
+    return { cx: cx + mx, cy: cy + my, rx: Math.sqrt(F / A), ry: Math.sqrt(F / C) };
+  }
+  function solve4(M, R) {
+    const a = M.map((r, i) => [...r, R[i]]);
+    for (let c = 0; c < 4; c++) {
+      let p = c; for (let r = c + 1; r < 4; r++) if (Math.abs(a[r][c]) > Math.abs(a[p][c])) p = r;
+      if (Math.abs(a[p][c]) < 1e-14) return null;
+      [a[c], a[p]] = [a[p], a[c]];
+      for (let r = 0; r < 4; r++) if (r !== c) { const k = a[r][c] / a[c][c]; for (let j = c; j < 5; j++) a[r][j] -= k * a[c][j]; }
+    }
+    return a.map((r, i) => r[4] / r[i]);
+  }
+  // Robust fit: fit, drop the worst quarter, fit again
+  function robustEllipse(pts) {
+    let e = fitAxisEllipse(pts);
+    if (!e) return null;
+    const res = pts.map(p => [p, Math.abs(((p[0] - e.cx) / e.rx) ** 2 + ((p[1] - e.cy) / e.ry) ** 2 - 1)]);
+    res.sort((x, y) => x[1] - y[1]);
+    const keep = res.slice(0, Math.max(6, Math.floor(res.length * 0.75))).map(x => x[0]);
+    return fitAxisEllipse(keep) || e;
+  }
+  // Find the coin rim around (cx, cy) in an RGB image (Float32Array, 3 values per pixel).
+  // Colour distance, not brightness: a silver coin on light wood can be as bright as the wood.
+  // Along each ray it takes the FIRST strong edge out from the centre, so seams and grain
+  // farther out lose to the rim.
+  function findRim(rgb, w, h, cx, cy, r0, r1, rays = 64) {
+    const at = (x, y, out) => {
+      const i = Math.max(0, Math.min(w - 2, Math.floor(x))), j = Math.max(0, Math.min(h - 2, Math.floor(y)));
+      const tx = Math.min(1, Math.max(0, x - i)), ty = Math.min(1, Math.max(0, y - j));
+      for (let k = 0; k < 3; k++) {
+        const a = rgb[(j * w + i) * 3 + k], b = rgb[(j * w + i + 1) * 3 + k], c = rgb[((j + 1) * w + i) * 3 + k], d = rgb[((j + 1) * w + i + 1) * 3 + k];
+        out[k] = (a * (1 - tx) + b * tx) * (1 - ty) + (c * (1 - tx) + d * tx) * ty;
+      }
+    };
+    const pts = [], p = [0, 0, 0], q = [0, 0, 0], st = 0.75;
+    for (let k = 0; k < rays; k++) {
+      const th = 2 * Math.PI * k / rays, dx = Math.cos(th), dy = Math.sin(th);
+      const g = [], rs = [];
+      for (let r = r0; r <= r1; r += st) {
+        at(cx + dx * (r - st), cy + dy * (r - st), p); at(cx + dx * (r + st), cy + dy * (r + st), q);
+        g.push(Math.hypot(q[0] - p[0], q[1] - p[1], q[2] - p[2])); rs.push(r);
+      }
+      const mx = Math.max(...g);
+      if (!(mx > 8)) continue;
+      for (let i = 1; i < g.length - 1; i++) {
+        if (g[i] >= 0.55 * mx && g[i] >= g[i - 1] && g[i] >= g[i + 1]) { pts.push([cx + dx * rs[i], cy + dy * rs[i]]); break; }
+      }
+    }
+    return robustEllipse(pts);
+  }
+
+  // Colour classification: coin colour sampled around the centre, floor colour sampled on the
+  // crop border. Each ray walks out until pixels stay floor-coloured; relief on the coin face
+  // stays coin-coloured, so it doesn't stop the ray.
+  function findRimByColor(rgb, w, h, cx, cy, r1, rays = 96, rCoin = null) {
+    const px = (x, y) => { const i = (Math.max(0, Math.min(h - 1, Math.round(y))) * w + Math.max(0, Math.min(w - 1, Math.round(x)))) * 3; return [rgb[i], rgb[i + 1], rgb[i + 2]]; };
+    // feature: chromaticity (shadows keep it) plus a little brightness
+    const feat = c => { const t = c[0] + c[1] + c[2] + 1; return [300 * c[0] / t, 300 * c[1] / t, 300 * c[2] / t, 0.35 * (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2])]; };
+    const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2], a[3] - b[3]);
+    const med = arr => { const s = arr.slice().sort((a, b) => a - b); return s[s.length >> 1]; };
+    const cr = rCoin ? rCoin * 0.5 : Math.max(3, Math.min(w, h) * 0.025);
+    const cs = [[], [], []];
+    for (let y = -cr; y <= cr; y += 1) for (let x = -cr; x <= cr; x += 1) if (x * x + y * y <= cr * cr) { const c = px(cx + x, cy + y); cs[0].push(c[0]); cs[1].push(c[1]); cs[2].push(c[2]); }
+    const coinC = feat(cs.map(med));
+    const bs = [[], [], []], band = Math.max(3, Math.round(Math.min(w, h) * 0.05));
+    for (let y = 0; y < h; y += 2) for (let x = 0; x < w; x += 2) if (x < band || y < band || x >= w - band || y >= h - band) { const c = px(x, y); bs[0].push(c[0]); bs[1].push(c[1]); bs[2].push(c[2]); }
+    const bgC = feat(bs.map(med));
+    if (dist(coinC, bgC) < 10) return null;                 // coin and floor look alike: give up
+    const isCoin = c => { const f = feat(c); return dist(f, coinC) < dist(f, bgC); };
+    const pts = [], st = 0.5;
+    for (let k = 0; k < rays; k++) {
+      const th = 2 * Math.PI * k / rays, dx = Math.cos(th), dy = Math.sin(th);
+      let run = 0, edge = -1;
+      for (let r = 1; r <= r1; r += st) {
+        if (isCoin(px(cx + dx * r, cy + dy * r))) run = 0;
+        else if (++run === 4) { edge = r - 3.5 * st; break; }
+      }
+      if (edge > 1) pts.push([cx + dx * edge, cy + dy * edge]);
+    }
+    return pts.length >= 12 ? robustEllipse(pts) : null;
+  }
+
+  // ------------------------------------------------------------------ layout
+  const EPS = 1e-6;
+  const overlaps = (a, b, e = 1e-6) => a.x < b.x + b.w - e && b.x < a.x + a.w - e && a.y < b.y + b.d - e && b.y < a.y + a.d - e;
+  const area = W => W.w * W.d;
+  const cap = (w, d, m) => Math.floor(w / m + EPS) * Math.floor(d / m + EPS);
+
+  function mulberry(seed) {
+    let t = seed >>> 0;
+    return () => { t += 0x6D2B79F5; let r = Math.imul(t ^ t >>> 15, 1 | t); r ^= r + Math.imul(r ^ r >>> 7, 61 | r); return ((r ^ r >>> 14) >>> 0) / 4294967296; };
+  }
+
+  // Cut a rect along an axis into n1 / n2 boxes; position snapped to the grid (absolute).
+  function cutRange(rect, axis, n1, n2, m) {
+    const L = axis === 'x' ? rect.w : rect.d, O = axis === 'x' ? rect.d : rect.w;
+    const per = Math.floor(O / m + EPS);
+    if (per < 1) return null;
+    const a1 = m * Math.ceil(n1 / per), a2 = m * Math.ceil(n2 / per);
+    if (a1 + a2 > L + EPS) return null;
+    return [a1, L - a2];
+  }
+  function doCut(rect, axis, t, step) {
+    const o = axis === 'x' ? rect.x : rect.y;
+    return o + t;   // absolute coordinate; snapping happens by the caller
+  }
+  function snapAbs(v, step) { return Math.round(v / step) * step; }
+  function splitAt(rect, axis, abs) {
+    if (axis === 'x') return [{ x: rect.x, y: rect.y, w: abs - rect.x, d: rect.d }, { x: abs, y: rect.y, w: rect.x + rect.w - abs, d: rect.d }];
+    return [{ x: rect.x, y: rect.y, w: rect.w, d: abs - rect.y }, { x: rect.x, y: abs, w: rect.w, d: rect.y + rect.d - abs }];
+  }
+  // choose a cut position near the target fraction; returns absolute coordinate or null
+  function pickCut(rect, axis, n1, n2, frac, step, m) {
+    const rg = cutRange(rect, axis, n1, n2, m);
+    if (!rg) return null;
+    const o = axis === 'x' ? rect.x : rect.y, L = axis === 'x' ? rect.w : rect.d;
+    let t = Math.max(rg[0], Math.min(rg[1], L * frac));
+    let abs = snapAbs(o + t, step);
+    if (abs - o < rg[0] - EPS) abs = snapAbs(o + rg[0] + step / 2 - EPS, step), abs = Math.max(abs, o + rg[0]);
+    if (abs - o > rg[1] + EPS) abs = Math.min(snapAbs(o + rg[1] - step / 2 + EPS, step), o + rg[1]);
+    if (abs - o < rg[0] - EPS || abs - o > rg[1] + EPS) {
+      // grid could not hit the window: cut exactly at the window edge
+      abs = o + Math.max(rg[0], Math.min(rg[1], t));
+    }
+    return abs;
+  }
+
+  // Recursive guillotine partition. chooser(rect, n, depth) -> {axis, n1, frac} or null
+  function partition(rect, n, step, m, chooser, depth = 0) {
+    if (n === 1) return [rect];
+    if (cap(rect.w, rect.d, m) < n) return null;
+    const tries = chooser(rect, n, depth);
+    for (const c of tries) {
+      const n2 = n - c.n1;
+      if (c.n1 < 1 || n2 < 1) continue;
+      const abs = pickCut(rect, c.axis, c.n1, n2, c.frac, step, m);
+      if (abs === null) continue;
+      const [r1, r2] = splitAt(rect, c.axis, abs);
+      const p1 = partition(r1, c.n1, step, m, chooser, depth + 1);
+      if (!p1) continue;
+      const p2 = partition(r2, n2, step, m, chooser, depth + 1);
+      if (!p2) continue;
+      return p1.concat(p2);
+    }
+    return null;
+  }
+  const longer = r => (r.w >= r.d ? 'x' : 'y');
+  const other = a => (a === 'x' ? 'y' : 'x');
+
+  const STYLES = [
+    { id: 'grid', name: 'Even grid' },
+    { id: 'columns', name: 'Columns' },
+    { id: 'rows', name: 'Rows' },
+    { id: 'hero', name: 'One large + small' },
+    { id: 'mixed', name: 'Mixed' },
+  ];
+
+  // k pieces across [x0, x0+L], each >= m, cuts snapped to the grid (absolute); jitter 0..1
+  function strip(x0, L, k, step, m, rng, jitter) {
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const j = attempt < 3 ? jitter : 0;
+      const cuts = [x0];
+      for (let i = 1; i < k; i++) {
+        let p = x0 + L * i / k + (rng() - 0.5) * j * (L / k);
+        p = snapAbs(p, step);
+        cuts.push(p);
+      }
+      cuts.push(x0 + L);
+      let ok = true;
+      for (let i = 1; i < cuts.length; i++) if (cuts[i] - cuts[i - 1] < m - EPS) { ok = false; break; }
+      if (ok) return cuts;
+    }
+    // even, unsnapped fallback
+    const cuts = []; for (let i = 0; i <= k; i++) cuts.push(x0 + L * i / k);
+    return cuts.every((c, i) => !i || c - cuts[i - 1] >= m - EPS) ? cuts : null;
+  }
+  // distribute n into k groups, as even as possible, the extras placed at random
+  function spread(n, k, rng, skew = 0) {
+    const out = Array(k).fill(Math.floor(n / k)); let r = n - out[0] * k;
+    const order = [...Array(k).keys()].sort(() => rng() - 0.5);
+    for (let i = 0; i < r; i++) out[order[i]]++;
+    // optional skew: move one box between two groups
+    if (skew && k > 1 && rng() < skew) { const a = Math.floor(rng() * k), b = (a + 1) % k; if (out[a] > 1) { out[a]--; out[b]++; } }
+    return out;
+  }
+  // bands along `main` ('x' = columns side by side), each band split across the other axis
+  function bands(rect, counts, main, step, m, rng, jitter) {
+    const L = main === 'x' ? rect.w : rect.d, O = main === 'x' ? rect.d : rect.w;
+    const o0 = main === 'x' ? rect.x : rect.y, p0 = main === 'x' ? rect.y : rect.x;
+    // band widths proportional to their counts
+    const tot = counts.reduce((s, c) => s + c, 0), cuts = [o0];
+    let acc = 0;
+    for (let i = 0; i < counts.length - 1; i++) { acc += counts[i]; cuts.push(snapAbs(o0 + L * acc / tot + (rng() - 0.5) * jitter * (L / counts.length), step)); }
+    cuts.push(o0 + L);
+    for (let i = 1; i < cuts.length; i++) if (cuts[i] - cuts[i - 1] < m - EPS) return null;
+    const out = [];
+    for (let i = 0; i < counts.length; i++) {
+      const across = strip(p0, O, counts[i], step, m, rng, jitter);
+      if (!across) return null;
+      for (let j = 0; j < counts[i]; j++) {
+        const a = cuts[i], b = cuts[i + 1], c = across[j], d = across[j + 1];
+        out.push(main === 'x' ? { x: a, y: c, w: b - a, d: d - c } : { x: c, y: a, w: d - c, d: b - a });
+      }
+    }
+    return out;
+  }
+  // best band count for near-square cells
+  function bestBands(rect, n, main, m, rng) {
+    const L = main === 'x' ? rect.w : rect.d, O = main === 'x' ? rect.d : rect.w;
+    let best = null;
+    for (let k = 1; k <= n; k++) {
+      if (L / k < m - EPS) break;
+      const per = Math.ceil(n / k);
+      if (O / per < m - EPS) continue;
+      const cw = L / k, ch = O / (n / k);
+      const score = Math.abs(Math.log(cw / ch)) + rng() * 0.15;
+      if (!best || score < best.score) best = { k, score };
+    }
+    return best ? best.k : null;
+  }
+
+  function layoutStyle(style, rect, n, step, m, rng) {
+    if (n === 1) return [{ ...rect }];
+    if (style === 'grid') {
+      const main = rect.w >= rect.d ? 'y' : 'x';          // rows across the shorter side
+      const k = bestBands(rect, n, main, m, () => 0);
+      if (!k) return null;
+      return bands(rect, spread(n, k, rng), main, step, m, rng, 0);
+    }
+    if (style === 'columns' || style === 'rows') {
+      const main = style === 'columns' ? 'x' : 'y';
+      let k = bestBands(rect, n, main, m, rng);
+      if (!k) return null;
+      if (k === 1 && n > 1 && (main === 'x' ? rect.w : rect.d) >= 2 * m) k = 2;
+      return bands(rect, spread(n, k, rng, 0.6), main, step, m, rng, 0.5);
+    }
+    if (style === 'hero') {
+      const main = rect.w >= rect.d ? 'x' : 'y', L = main === 'x' ? rect.w : rect.d;
+      const atStart = rng() < 0.5;
+      for (let f = 0.5 + rng() * 0.1; f >= 0.3; f -= 0.04) {
+        let h = Math.max(m, snapAbs(L * f, step));
+        const restL = L - h;
+        if (restL < m - EPS) continue;
+        const hero = main === 'x' ? { x: atStart ? rect.x : rect.x + restL, y: rect.y, w: h, d: rect.d } : { x: rect.x, y: atStart ? rect.y : rect.y + restL, w: rect.w, d: h };
+        const rest = main === 'x' ? { x: atStart ? rect.x + h : rect.x, y: rect.y, w: restL, d: rect.d } : { x: rect.x, y: atStart ? rect.y + h : rect.y, w: rect.w, d: restL };
+        if (cap(rest.w, rest.d, m) < n - 1) continue;
+        const sub = layoutStyle(rng() < 0.5 ? 'grid' : 'columns', rest, n - 1, step, m, rng) || layoutStyle('mixed', rest, n - 1, step, m, rng);
+        if (sub) return [hero, ...sub];
+      }
+      return null;
+    }
+    return partition(rect, n, step, m, (r, k) => {
+      const out = [];
+      for (let t = 0; t < 8; t++) {
+        const ax = rng() < 0.7 ? longer(r) : other(longer(r)), n1 = 1 + Math.floor(rng() * (k - 1));
+        out.push({ axis: ax, n1, frac: (n1 / k) * (0.75 + rng() * 0.5) });
+      }
+      for (let n1 = 1; n1 < k; n1++) out.push({ axis: longer(r), n1, frac: n1 / k }, { axis: other(longer(r)), n1, frac: n1 / k });
+      return out;
+    });
+  }
+
+  function validLayout(rs, W, m) {
+    if (!rs) return false;
+    for (const r of rs) if (r.w < m - 1e-4 || r.d < m - 1e-4 || r.x < -1e-6 || r.y < -1e-6 || r.x + r.w > W.w + 1e-6 || r.y + r.d > W.d + 1e-6) return false;
+    for (let i = 0; i < rs.length; i++) for (let j = i + 1; j < rs.length; j++) if (overlaps(rs[i], rs[j], 1e-4)) return false;
+    const a = rs.reduce((s, r) => s + r.w * r.d, 0);
+    return Math.abs(a - W.w * W.d) < 1e-3;
+  }
+
+  function generate(W, n, seed, step, minBox = DEF.minBox) {
+    const root = { x: 0, y: 0, w: W.w, d: W.d };
+    const maxN = cap(W.w, W.d, minBox);
+    if (n < 1 || n > maxN) return { maxN, options: [] };
+    const sig = rs => rs.map(r => [r.x, r.y, r.w, r.d].map(v => v.toFixed(2)).join(',')).sort().join('|');
+    const seen = new Set(), options = [];
+    for (const [si, st] of STYLES.entries()) {
+      let got = null;
+      for (let attempt = 0; attempt < 40 && !got; attempt++) {
+        const rng = mulberry(seed * 977 + si * 131 + attempt * 7919 + 1);
+        let rs = layoutStyle(st.id, root, n, step, minBox, rng);
+        if (!validLayout(rs, W, minBox)) rs = attempt > 20 ? layoutStyle('mixed', root, n, step, minBox, rng) : null;
+        if (!validLayout(rs, W, minBox)) continue;
+        if (seen.has(sig(rs)) && attempt < 39) continue;
+        got = rs;
+      }
+      if (got) { seen.add(sig(got)); options.push({ style: st.id, name: st.name, rects: got.map(r => ({ x: +r.x.toFixed(4), y: +r.y.toFixed(4), w: +r.w.toFixed(4), d: +r.d.toFixed(4) })) }); }
+    }
+    return { maxN, options };
+  }
+
+  // ----------------------------------------------------- container geometry
+  // Effective wall draft (rim -> base inset), from the Wall slant slider. Both types have it:
+  // a Dome container has the same outside as a Standard one, only its floor is a bowl.
+  // Capped so the base keeps room for its track loop.
+  function draftOf(b, P = DEF) {
+    const want = Math.max(0, b.slant ?? 0);
+    const max = Math.max(0, (Math.min(b.w, b.d) - P.minBase) / 2);
+    return { draft: Math.min(want, max), max, capped: want > max + 1e-9 };
+  }
+  // Blend: one radius for the vertical corners and for the wall-to-floor curve (the ghx Fillet Edge).
+  function blendOf(b, ctx) {
+    const P = ctx.P, D = draftOf(b, P).draft, want = b.blend ?? P.blend;
+    const max = Math.max(P.blendMin, Math.min(P.blendMax, 0.45 * (Math.min(b.w, b.d) - 2 * D), 0.45 * ctx.bodyH));
+    return { r: Math.max(P.blendMin, Math.min(want, max)), max, capped: want > max + 1e-9 };
+  }
+  // Ring wall's outer edge, inset from the base edge (ghx: 1.2 - 0.5 - 0.25 = 0.45), shrunk for small bases
+  function trackOffset(baseMin, P = DEF) {
+    return Math.max(0.05, Math.min(0.45, (baseMin - 2 * (P.slotW + 2 * P.ringT) - 0.2) / 2));
+  }
+
+  // Degree-5 dome profile from the texture study: Q(t), control values 0 F 1 1 F 0
+  function domeQ(F, t) {
+    const q = [0, F, 1, 1, F, 0], bin = [1, 5, 10, 10, 5, 1];
+    let s = 0;
+    for (let i = 0; i <= 5; i++) s += bin[i] * Math.pow(t, i) * Math.pow(1 - t, 5 - i) * q[i];
+    return s;
+  }
+  // Half of that dome, normalised: 0 at the wall (steep), 1 at the centre (flat). Turned upside
+  // down it is the bowl of a Dome container.
+  const bowlQ = (F, s) => domeQ(F, s / 2) / domeQ(F, 0.5);
+
+  // Outer wall profile as [inset-from-rim, z] from the floor edge up to the rim: a straight or
+  // slanted line from (D, 0) to (0, Hb), blended into the floor with radius r.
+  function outerProfile(D, Hb, r, P = DEF) {
+    const len = Math.hypot(D, Hb), wdir = [-D / len, Hb / len], fdir = [1, 0];
+    const cos = fdir[0] * wdir[0] + fdir[1] * wdir[1], th = Math.acos(Math.max(-1, Math.min(1, cos)));
+    let tl = r / Math.tan(th / 2);
+    const tlMax = Math.min(len * 0.45, P.blendMax);
+    if (tl > tlMax) { tl = tlMax; r = tl * Math.tan(th / 2); }
+    const C = [D, 0], P1 = [C[0] + fdir[0] * tl, 0], P2 = [C[0] + wdir[0] * tl, wdir[1] * tl];
+    const bis = [fdir[0] + wdir[0], fdir[1] + wdir[1]], bl = Math.hypot(bis[0], bis[1]);
+    const ctr = [C[0] + bis[0] / bl * (r / Math.sin(th / 2)), C[1] + bis[1] / bl * (r / Math.sin(th / 2))];
+    const a0 = Math.atan2(P1[1] - ctr[1], P1[0] - ctr[0]), a1 = Math.atan2(P2[1] - ctr[1], P2[0] - ctr[0]);
+    let da = a1 - a0; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
+    const pts = [], NA = 10;
+    for (let j = 0; j <= NA; j++) { const a = a0 + da * j / NA; pts.push([ctr[0] + r * Math.cos(a), ctr[1] + r * Math.sin(a)]); }
+    pts[0] = P1; pts[NA] = P2;
+    pts.push([0, Hb]);
+    return pts;
+  }
+  // Offset a profile polyline toward the cavity by t; clip at z <= Hb
+  function innerProfile(prof, t, Hb) {
+    const n = prof.length, out = [];
+    for (let k = 0; k < n; k++) {
+      const a = prof[Math.max(0, k - 1)], b = prof[Math.min(n - 1, k + 1)];
+      let tx = b[0] - a[0], tz = b[1] - a[1]; const l = Math.hypot(tx, tz) || 1; tx /= l; tz /= l;
+      out.push([prof[k][0] + tz * t, prof[k][1] - tx * t]);
+    }
+    out[0] = [prof[0][0], t];                                  // floor: straight up by t
+    for (let k = 1; k < out.length; k++) {
+      if (out[k][1] >= Hb) {
+        const p = out[k - 1], q = out[k], s = (Hb - p[1]) / (q[1] - p[1] || 1);
+        out.length = k; out.push([p[0] + (q[0] - p[0]) * s, Hb]);
+        break;
+      }
+    }
+    if (out[out.length - 1][1] < Hb - 1e-6) { const p = out[out.length - 1]; out.push([p[0], Hb]); }
+    return out;
+  }
+  // z of the outer bottom surface at a given inset from the rim (0 under the flat floor)
+  function surfaceZ(prof, inset) {
+    if (inset >= prof[0][0]) return 0;
+    for (let k = 1; k < prof.length; k++) {
+      const a = prof[k - 1], b = prof[k];
+      if (inset <= a[0] && inset >= b[0]) { const s = (a[0] - inset) / (a[0] - b[0] || 1); return a[1] + (b[1] - a[1]) * s; }
+    }
+    return prof[prof.length - 1][1];
+  }
+
+  // Everything that shapes one container's body
+  function shapeOf(b, ctx) {
+    const P = ctx.P, Hb = ctx.bodyH, D = draftOf(b, P).draft, R = blendOf(b, ctx).r;
+    const prof = outerProfile(D, Hb, R, P), inn = innerProfile(prof, P.wall, Hb);
+    const rim = planToWorldRect(b, ctx);
+    const base = { x0: rim.x0 + D, y0: rim.y0 + D, x1: rim.x1 - D, y1: rim.y1 - D };
+    return { P, Hb, D, R, prof, inn, rim, base, flat: prof[0][0] - D, dome: b.type === 'dome' };
+  }
+  // Plan corner radius of a ring at inset i from the rim: R at the base, R + draft at the rim
+  // (an offset of the base rectangle, as Grasshopper's Offset makes it), shrinking through the floor blend.
+  const ringR = (sh, i) => Math.max(0.004, sh.R + sh.D - i);
+
+  // Bowl of a Dome container: from where it leaves the wall down to its lowest point
+  function bowlOf(b, ctx, prof) {
+    const P = ctx.P, Hb = ctx.bodyH;
+    prof = prof || outerProfile(draftOf(b, P).draft, Hb, blendOf(b, ctx).r, P);
+    const blendTop = prof[prof.length - 2][1];               // where the floor blend meets the wall
+    const max = Math.max(0.1, Hb - P.bowlFloor);
+    const min = Math.min(max, Math.max(P.bowlMin, blendTop + P.wall + 0.05 - P.bowlFloor));
+    const want = b.bowl ?? P.bowl;
+    return { depth: Math.max(min, Math.min(max, want)), min, max, capped: want > max + 1e-9, raised: want < min - 1e-9 };
+  }
+  // Inner surface of a Dome container as [inset, z, cornerR] rings from the rim down: the wall to
+  // the top of the bowl, then the reversed dome curve to the centre (a trough on long containers).
+  function domeCavity(sh, hw, hd, bowl) {
+    const P = sh.P, zc = P.bowlFloor, zE = Math.min(sh.Hb, zc + bowl), inn = sh.inn, out = [];
+    const last = inn.length - 1;
+    out.push([inn[last][0], inn[last][1], ringR(sh, inn[last][0])]);
+    let iE = inn[last][0];
+    for (let k = last - 1; k >= 0; k--) {
+      const [i, z] = inn[k];
+      if (z > zE + 1e-6) { out.push([i, z, ringR(sh, i)]); iE = i; continue; }
+      const [i1, z1] = inn[k + 1], s = (z1 - zE) / ((z1 - z) || 1);
+      iE = i1 + (i - i1) * s;
+      if (z1 - zE > 1e-6) out.push([iE, zE, ringR(sh, iE)]);
+      break;
+    }
+    const rE = ringR(sh, iE), mE = Math.min(hw, hd) - iE - 0.03, N = 18;
+    for (let j = 1; j <= N; j++) {
+      const s = Math.pow(j / N, 1.6), i = iE + s * mE;
+      const z = Math.max(zE - (zE - zc) * bowlQ(P.domeF, s), surfaceZ(sh.prof, i) + P.wall);
+      out.push([i, z, rE + (mE + 0.03 - rE) * s]);
+    }
+    return out;
+  }
+
+  // rounded rectangle ring, CCW (world), 4*(seg+1) points
+  function rrRing(cx, cy, hw, hd, r, z, seg) {
+    r = Math.max(0.004, Math.min(r, hw - 0.002, hd - 0.002));
+    const out = [], C = [[hw - r, hd - r, 0], [-(hw - r), hd - r, 0.5], [-(hw - r), -(hd - r), 1], [hw - r, -(hd - r), 1.5]];
+    for (const [ox, oy, a0] of C) for (let j = 0; j <= seg; j++) {
+      const a = (a0 + 0.5 * j / seg) * Math.PI;
+      out.push([cx + ox + r * Math.cos(a), cy + oy + r * Math.sin(a), z]);
+    }
+    return out;
+  }
+  // signed distance to a rounded rect (negative inside)
+  function sdRR(x, y, cx, cy, hw, hd, r) {
+    r = Math.max(0, Math.min(r, hw, hd));
+    const qx = Math.abs(x - cx) - (hw - r), qy = Math.abs(y - cy) - (hd - r);
+    return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r;
+  }
+
+  // ---- universal sweep: sections (closed polygons with the same count) along an open or closed path
+  function sweep(sections, closedPath, opts = {}) {
+    const m = sections[0].length, ns = sections.length;
+    const pos = [], idx = [];
+    sections.forEach(s => s.forEach(p => pos.push(p[0], p[1], p[2])));
+    const id = (k, i) => (k % ns) * m + (i % m);
+    const last = closedPath ? ns : ns - 1;
+    for (let k = 0; k < last; k++) for (let i = 0; i < m; i++) {
+      const a = id(k, i), b = id(k, i + 1), c = id(k + 1, i), d = id(k + 1, i + 1);
+      idx.push(a, b, d, a, d, c);
+    }
+    if (!closedPath) {
+      const cap = (k, flip) => {
+        let cx = 0, cy = 0, cz = 0; sections[k].forEach(p => { cx += p[0]; cy += p[1]; cz += p[2]; });
+        const c = pos.length / 3; pos.push(cx / m, cy / m, cz / m);
+        for (let i = 0; i < m; i++) flip ? idx.push(c, id(k, i + 1), id(k, i)) : idx.push(c, id(k, i), id(k, i + 1));
+      };
+      if (opts.capStart !== false) cap(0, true);
+      cap(ns - 1, false);
+    }
+    const sh = { pos, idx };
+    return opts.orient === false ? sh : orientOut(sh);
+  }
+  function signedVolume(sh) {
+    const P = sh.pos, I = sh.idx; let v = 0;
+    for (let t = 0; t < I.length; t += 3) {
+      const a = I[t] * 3, b = I[t + 1] * 3, c = I[t + 2] * 3;
+      v += P[a] * (P[b + 1] * P[c + 2] - P[b + 2] * P[c + 1]) - P[a + 1] * (P[b] * P[c + 2] - P[b + 2] * P[c]) + P[a + 2] * (P[b] * P[c + 1] - P[b + 1] * P[c]);
+    }
+    return v / 6;
+  }
+  function orientOut(sh) {
+    if (signedVolume(sh) < 0) for (let t = 0; t < sh.idx.length; t += 3) { const k = sh.idx[t + 1]; sh.idx[t + 1] = sh.idx[t + 2]; sh.idx[t + 2] = k; }
+    return sh;
+  }
+
+  // ---------------------------------------------------------------- labels
+  // Debossed text uses an uppercase subset of IBM Plex Mono Bold, stored as polygons (font.js).
+  const fontData = () => (typeof K_FONT !== 'undefined' ? K_FONT : (typeof require !== 'undefined' ? require('./font.js') : null));
+  const TRACKING = 60;                                        // extra letter spacing, font units
+  const cleanLabel = s => String(s || '').toUpperCase().replace(/[^A-Z0-9 \-.&/+#()':_·]/g, '').replace(/\s+/g, ' ').trim();
+  // One line as polygon groups [outline, ...counters] in font units, baseline y = 0, from x = 0
+  function textLine(str) {
+    const F = fontData(), pitch = F.adv + TRACKING, groups = [];
+    let x = 0;
+    for (const ch of str) {
+      const g = F.g[ch];
+      if (g) for (const grp of g) groups.push(grp.map(c => c.map(p => [p[0] + x, p[1]])));
+      x += pitch;
+    }
+    return { groups, w: Math.max(0, x - TRACKING) };
+  }
+  // Fit text into a w x h box (inches). levels: [[variant, ...], ...] in priority order, each variant
+  // a list of lines. Returns groups in local inches centred on (0, 0), or null if nothing fits.
+  function fitText(levels, w, h, maxCap, minCap) {
+    const F = fontData();
+    if (!F) return null;
+    for (const variants of levels) {
+      let best = null;
+      for (const lines of variants) {
+        if (!lines.length || lines.some(l => !l)) continue;
+        const ls = lines.map(textLine), n = ls.length, gap = 0.55;
+        const tw = Math.max(...ls.map(l => l.w)) / F.cap, th = n + gap * (n - 1);
+        for (const rot of [0, 1]) {
+          const W = (rot ? h : w) * 0.96, H = (rot ? w : h) * 0.92;
+          const cap = Math.min(maxCap, W / tw, H / th);
+          const score = cap * (rot ? 0.87 : 1);                // read across, unless turning it is much bigger
+          if (cap >= minCap && (!best || score > best.score)) best = { cap, rot, ls, n, gap, th, score, lines };
+        }
+      }
+      if (!best) continue;
+      const s = best.cap / F.cap, groups = [];
+      best.ls.forEach((l, k) => {
+        const y0 = (best.th / 2 - 1 - k * (1 + best.gap)) * best.cap;
+        for (const g of l.groups) groups.push(g.map(c => c.map(([x, y]) => {
+          const X = (x - l.w / 2) * s, Y = y * s + y0;
+          return best.rot ? [-Y, X] : [X, Y];
+        })));
+      });
+      return { groups, cap: best.cap, lines: best.lines, rot: best.rot };
+    }
+    return null;
+  }
+  // Outlines counter-clockwise, counters clockwise, seen from above (+Z)
+  function orientGroups(groups) {
+    const area = c => { let a = 0; for (let i = 0; i < c.length; i++) { const p = c[i], q = c[(i + 1) % c.length]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; };
+    return groups.map(g => g.map((c, k) => ((k === 0 ? area(c) < 0 : area(c) > 0) ? c.slice().reverse() : c)));
+  }
+  function triangulate(contour, holes) {
+    const T = typeof THREE !== 'undefined' ? THREE : (typeof require !== 'undefined' ? (() => { try { return require('three'); } catch (e) { return null; } })() : null);
+    if (!T || !T.ShapeUtils) return null;
+    const v = p => new T.Vector2(p[0], p[1]);
+    return T.ShapeUtils.triangulateShape(contour.map(v), holes.map(h => h.map(v)));
+  }
+  // A flat face at height z, facing down (-Z), bounded by the vertex loop outerIdx (CCW seen from
+  // above), with text pockets `depth` deep cut upward into it. Appends to mesh {pos, idx}.
+  function faceWithPockets(mesh, outerIdx, z, groups, depth) {
+    const pos = mesh.pos, idx = mesh.idx;
+    const add = (x, y, zz) => { pos.push(x, y, zz); return pos.length / 3 - 1; };
+    const xy = i => [pos[i * 3], pos[i * 3 + 1]];
+    const down = (a, b, c) => {                                // triangle with its normal pointing -Z
+      const A = xy(a), B = xy(b), C = xy(c);
+      ((B[0] - A[0]) * (C[1] - A[1]) - (B[1] - A[1]) * (C[0] - A[0]) > 0) ? idx.push(a, c, b) : idx.push(a, b, c);
+    };
+    const outer2 = outerIdx.map(xy);
+    const fan = () => { for (let i = 1; i < outerIdx.length - 1; i++) down(outerIdx[0], outerIdx[i], outerIdx[i + 1]); };
+    if (!groups || !groups.length) { const t = triangulate(outer2, []); if (t) t.forEach(f => down(outerIdx[f[0]], outerIdx[f[1]], outerIdx[f[2]])); else fan(); return 0; }
+    // earcut drops repeated and collinear points; drop them first so walls and faces share every vertex
+    const clean = c0 => {
+      const c = c0.filter((p, i) => { const q = c0[(i + 1) % c0.length]; return Math.hypot(q[0] - p[0], q[1] - p[1]) > 1e-9; });
+      for (let i = 0; c.length > 3 && i < c.length;) {
+        const a = c[(i - 1 + c.length) % c.length], p = c[i], b = c[(i + 1) % c.length];
+        if (Math.abs((p[0] - a[0]) * (b[1] - a[1]) - (p[1] - a[1]) * (b[0] - a[0])) < 1e-12) c.splice(i, 1); else i++;
+      }
+      return c;
+    };
+    // earcut also mis-handles edges that lie on one exact line (letters share a baseline, serifs line
+    // up), so move every point by a different few millionths of an inch
+    let kc = 0;
+    const jit = n => { const x = Math.sin(n * 12.9898 + 78.233) * 43758.5453; return (x - Math.floor(x)) - 0.5; };
+    const nudge = c => c.map(p => { kc++; return [p[0] + jit(kc) * 4e-5, p[1] + jit(kc + 7919) * 4e-5]; });
+    groups = groups.map(g => g.map(clean).filter(c => c.length >= 3).map(nudge)).filter(g => g.length);
+    const G = groups.map(g => g.map(c => ({ c, lo: c.map(p => add(p[0], p[1], z)), hi: c.map(p => add(p[0], p[1], z + depth)) })));
+    const ft = triangulate(outer2, G.map(g => g[0].c));
+    if (!ft) { fan(); return 0; }
+    const map = outerIdx.concat(...G.map(g => g[0].lo));
+    ft.forEach(f => down(map[f[0]], map[f[1]], map[f[2]]));
+    for (const g of G) {
+      for (const h of g.slice(1)) triangulate(h.c, []).forEach(f => down(h.lo[f[0]], h.lo[f[1]], h.lo[f[2]]));   // counters stay at face level
+      const cm = g[0].hi.concat(...g.slice(1).map(h => h.hi));
+      triangulate(g[0].c, g.slice(1).map(h => h.c)).forEach(f => down(cm[f[0]], cm[f[1]], cm[f[2]]));           // pocket ceiling
+      for (const h of g) {                                                                                       // pocket walls
+        const n = h.c.length;
+        for (let j = 0; j < n; j++) { const a0 = h.lo[j], b0 = h.lo[(j + 1) % n], a1 = h.hi[j], b1 = h.hi[(j + 1) % n]; idx.push(a0, b1, b0, a0, a1, b1); }
+      }
+    }
+    return G.length;
+  }
+  // Where a container's label goes: in the middle of the underside if it fits there, otherwise
+  // along the track channel of the longest side. Text is mirrored so it reads with the part turned over.
+  function placeContainerLabel(b, ctx, sh, text) {
+    const P = ctx.P, L = loopOf(b, ctx, sh), base = sh.base, bw = base.x1 - base.x0, bd = base.y1 - base.y0;
+    const lab = cleanLabel(text.label), name = cleanLabel(text.name);
+    const levels = name ? [[[`${lab} ${name}`], [lab, name]], [[lab]]] : [[[lab]]];
+    const cands = [], m = 0.08;
+    const jh = Math.max(L.j.inner, sh.flat) + m;
+    if (bw - 2 * jh > 0.05 && bd - 2 * jh > 0.05) cands.push({ cx: L.cx, cy: L.cy, w: bw - 2 * jh, h: bd - 2 * jh, where: 'centre' });
+    // the channel's ceiling, where it is flat (a big blend curves its outer part)
+    const s0 = Math.max(L.j.chanOut, sh.flat) + 0.04, s1 = L.j.chanIn - 0.04;
+    if (s1 - s0 >= 0.15) {
+      const c = (s0 + s1) / 2, end = L.j.centre + Math.max(L.R - L.j.centre, 0.1) + 0.05, across = s1 - s0;
+      if (bw >= bd) cands.push({ cx: L.cx, cy: base.y0 + c, w: bw - 2 * end, h: across, where: 'track' });
+      else cands.push({ cx: base.x0 + c, cy: L.cy, w: across, h: bd - 2 * end, where: 'track' });
+    }
+    let best = null;
+    for (const cd of cands) {
+      if (cd.w <= 0 || cd.h <= 0) continue;
+      const f = fitText(levels, cd.w, cd.h, P.labelMaxCap, P.labelMinCap);
+      if (!f) continue;
+      const full = f.lines.join(' ').length >= levels[0][0][0].length;
+      const score = (full ? 10 : 0) + f.cap * (cd.where === 'centre' ? 1.1 : 1);
+      if (!best || score > best.score) best = { f, cd, score };
+    }
+    if (!best) return null;
+    const { f, cd } = best;
+    const groups = orientGroups(f.groups.map(g => g.map(c => c.map(([X, Y]) => [cd.cx + X, cd.cy - Y]))));
+    // centre and angle for rebuilding it elsewhere: mirror across the x axis first, then rotate by angle (degrees)
+    return { groups, cap: f.cap, text: f.lines.join(' '), where: cd.where, centre: [cd.cx, cd.cy], angle: f.rot ? -90 : 0 };
+  }
+
+  // One container as a list of closed shells (world coordinates)
+  function buildContainer(b, ctx, opts = {}) {
+    const sh = shapeOf(b, ctx), P = ctx.P, seg = opts.seg ?? 8;
+    const { rim, prof, inn } = sh;
+    const cx = (rim.x0 + rim.x1) / 2, cy = (rim.y0 + rim.y1) / 2, hw = (rim.x1 - rim.x0) / 2, hd = (rim.y1 - rim.y0) / 2;
+    const rings = [];
+    // outer floor edge -> rim, then the inside back down: the wall and flat floor, or the wall and bowl
+    for (const [i, z] of prof) rings.push(rrRing(cx, cy, hw - i, hd - i, ringR(sh, i), z, seg));
+    const inner = sh.dome ? domeCavity(sh, hw, hd, bowlOf(b, ctx, prof).depth) : inn.slice().reverse().map(([i, z]) => [i, z, ringR(sh, i)]);
+    for (const [i, z, r] of inner) rings.push(rrRing(cx, cy, hw - i, hd - i, r, z, seg));
+    const body = sweep(rings, false, { capStart: false, orient: false });
+    const label = opts.label ? placeContainerLabel(b, ctx, sh, opts.label) : null;
+    faceWithPockets(body, [...Array(rings[0].length).keys()], 0, label ? label.groups : [], Math.min(P.labelDepth, P.wall - 0.4 * MM));   // the floor keeps 0.4 mm under a label
+    const shells = [orientOut(body)];
+    if (opts.tracks !== false) shells.push(...buildTracks(b, ctx, sh, opts));
+    return { shells, prof, D: sh.D, R: sh.R, kind: sh.dome ? 'dome' : 'standard', rim, base: sh.base, label };
+  }
+  function baseRect(b, ctx) {
+    const { draft } = draftOf(b, ctx.P), r = planToWorldRect(b, ctx);
+    return { x0: r.x0 + draft, y0: r.y0 + draft, x1: r.x1 - draft, y1: r.y1 - draft };
+  }
+
+  // ---------------------------------------------------------------- tracks
+  // One closed track loop under the whole base: outer wall | channel | inner wall, each an inward
+  // offset of the base rectangle (corner radius = blend, shrinking with the offset).
+  function loopOf(b, ctx, sh) {
+    const P = ctx.P, D = draftOf(b, P).draft, R = sh ? sh.R : blendOf(b, ctx).r;
+    const base = sh ? sh.base : baseRect(b, ctx), bw = base.x1 - base.x0, bd = base.y1 - base.y0;
+    const o = trackOffset(Math.min(bw, bd), P);
+    const j = { outer: o, chanOut: o + P.ringT, centre: o + P.ringT + P.slotW / 2, chanIn: o + P.ringT + P.slotW, inner: o + 2 * P.ringT + P.slotW };
+    return { base, o, j, R, D, cx: (base.x0 + base.x1) / 2, cy: (base.y0 + base.y1) / 2, hw: bw / 2, hd: bd / 2 };
+  }
+  const loopCurve = (L, j, z, seg, rmin = 0.004) => rrRing(L.cx, L.cy, L.hw - j, L.hd - j, Math.max(rmin, L.R - j), z, seg);
+  function buildTracks(b, ctx, sh, opts = {}) {
+    sh = sh || shapeOf(b, ctx);
+    const P = ctx.P, L = loopOf(b, ctx, sh), seg = Math.max(6, opts.seg ?? 8), shells = [];
+    const z0 = -P.trackH, zs = z0 + P.slitH;                   // drawer floor; slit top and bead height
+    const zTop = j => surfaceZ(sh.prof, sh.D + j) + 0.03;      // up into the container's underside
+    const wall = (j0, j1, zb) => {
+      const a = loopCurve(L, j0, 0, seg), c = loopCurve(L, j1, 0, seg), za = zTop(j0), zc = zTop(j1);
+      return sweep(a.map((p, k) => [[p[0], p[1], zb], [p[0], p[1], za], [c[k][0], c[k][1], zc], [c[k][0], c[k][1], zb]]), true);
+    };
+    shells.push(wall(L.j.outer, L.j.chanOut, zs));            // outer wall: the slit runs all the way round, so it stops at the slit top
+    shells.push(wall(L.j.chanIn, L.j.inner, z0));             // inner wall: full height, the container stands on it
+    if (opts.bead !== false) {
+      const rb = P.beadR + 0.01;
+      shells.push(tube(loopCurve(L, L.j.chanIn, zs, seg, rb), P.beadR, 12, true, false));   // whole bead on the inner wall
+      shells.push(tube(loopCurve(L, L.j.chanOut, zs, seg, rb), P.beadR, 12, true, true));   // upper half on the outer wall, over the slit
+    }
+    return shells;
+  }
+  // tube along a planar (constant-z) path; half = upper half-disc only
+  function tube(path, r, segs, closed, half) {
+    const n = path.length, secs = [];
+    for (let k = 0; k < n; k++) {
+      const p = path[(k - 1 + n) % n], q = path[(k + 1) % n];
+      const a = closed || k > 0 ? p : path[k], b = closed || k < n - 1 ? q : path[k];
+      let tx = b[0] - a[0], ty = b[1] - a[1]; const l = Math.hypot(tx, ty) || 1; tx /= l; ty /= l;
+      const nx = -ty, ny = tx, c = path[k], s = [];
+      const cnt = half ? segs / 2 : segs;
+      for (let j = 0; j < (half ? cnt + 1 : cnt); j++) {
+        const ang = half ? Math.PI * j / cnt : 2 * Math.PI * j / cnt;
+        s.push([c[0] + nx * r * Math.cos(ang), c[1] + ny * r * Math.cos(ang), c[2] + r * Math.sin(ang)]);
+      }
+      secs.push(s);
+    }
+    return sweep(secs, closed);
+  }
+  // Where buttons may sit on each side: the straight part of the loop's centre line, kept clear
+  // of the corners so buttons on two sides can't touch. A = start, B = end, o = outward normal.
+  function sideSlots(L, P = DEF) {
+    const c = L.j.centre, e = c + Math.max(L.R - c, P.loopEnd), base = L.base;
+    const mk = (side, ax, ay, bx, by, ox, oy) => {
+      const vert = side === 'left' || side === 'right';
+      let A = [ax, ay], B = [bx, by];
+      if (vert ? by < ay : bx < ax) { const mid = [(ax + bx) / 2, (ay + by) / 2]; A = mid; B = mid.slice(); }
+      return { side, A, B, o: [ox, oy], u: vert ? [0, 1] : [1, 0] };
+    };
+    return {
+      left: mk('left', base.x0 + c, base.y0 + e, base.x0 + c, base.y1 - e, -1, 0),
+      right: mk('right', base.x1 - c, base.y0 + e, base.x1 - c, base.y1 - e, 1, 0),
+      front: mk('front', base.x0 + e, base.y0 + c, base.x1 - e, base.y0 + c, 0, -1),
+      back: mk('back', base.x0 + e, base.y1 - c, base.x1 - e, base.y1 - c, 0, 1),
+    };
+  }
+  function slotsOf(b, ctx) {
+    const L = loopOf(b, ctx);
+    return { base: L.base, o: L.o, loop: L, slots: sideSlots(L, ctx.P) };
+  }
+
+  // -------------------------------------------------------------- connector
+  // Snap-fit button, in its local frame: u along the channel, o across it toward the outer wall
+  // (the side the strap leaves by). A core slides between the bead crests with clearance; two
+  // spring arms run along the channel, one toward each wall, and end in hooks that flex past the
+  // beads and catch above them.
+  // hand +1: the outer arm (sign 1, toward the outer wall) runs toward +u; hand -1 mirrors it to -u
+  function buttonParts(P = DEF, hand = 1) {
+    const rc = P.slotW / 2 - P.beadR - P.coreClear;          // 0.19
+    const a0 = P.armOut - P.armT;
+    const arms = [
+      { u0: 0, u1: P.armReach, o0: a0, o1: P.armOut, barb: [P.armReach - P.barbLen, P.armReach], sign: 1 },
+      { u0: -P.armReach, u1: 0, o0: -P.armOut, o1: -a0, barb: [-P.armReach, -P.armReach + P.barbLen], sign: -1 },
+    ];
+    if (hand < 0) for (const A of arms) { [A.u0, A.u1] = [-A.u1, -A.u0]; A.barb = [-A.barb[1], -A.barb[0]]; }
+    return { coreR: rc, hand: hand < 0 ? -1 : 1, arms };
+  }
+  // The outer arm crosses the strap's path where the strap leaves the core. Point it away from the
+  // way the strap leans along the channel, so the strap never stiffens more than its straight-case root.
+  // o: the button's outward normal; d: unit direction from this button toward the other one.
+  function handOf(o, d) {
+    const lean = d[0] * -o[1] + d[1] * o[0];
+    return lean > 1e-6 ? -1 : 1;
+  }
+  // Plan footprint of one button at c with outward normal o (world): polygons [[x, y], ...]
+  function buttonFootprint(c, o, P = DEF, hand = 1) {
+    const bp = buttonParts(P, hand), u = [-o[1], o[0]];
+    const W = (uu, oo) => [c[0] + u[0] * uu + o[0] * oo, c[1] + u[1] * uu + o[1] * oo];
+    const polys = [];
+    const core = []; for (let j = 0; j < 32; j++) { const a = 2 * Math.PI * j / 32; core.push([c[0] + bp.coreR * Math.cos(a), c[1] + bp.coreR * Math.sin(a)]); }
+    polys.push(core);
+    for (const A of bp.arms) {
+      polys.push([W(A.u0, A.o0), W(A.u1, A.o0), W(A.u1, A.o1), W(A.u0, A.o1)]);
+      const tip = A.sign * P.barbOut, face = A.sign > 0 ? A.o1 : A.o0;
+      polys.push([W(A.barb[0], face), W(A.barb[1], face), W(A.barb[1], tip), W(A.barb[0], tip)]);
+    }
+    return polys;
+  }
+  // Hook section across the channel (o, z), for an arm whose outer face is at `face`, tip at `tip`
+  // Only the outer half of the hook (from the bead crest to the tip) ever touches the bead, so each
+  // face is shaped there: a 30° lead-in on top (from the insertion direction) that cams the arm in,
+  // and a 45° face underneath, parallel to the bead's surface 0.01 in away, that lets it un-snap.
+  function barbSection(face, tip, P = DEF) {
+    const s = Math.sign(tip - face), w = Math.abs(tip - face), at = (e, z) => [face + s * e, z];
+    const zTop = -0.02, zLand = -0.08, zTipLow = -0.09, d45 = 0.04, mid = w / 2;
+    const zLead = zLand + mid / Math.tan(30 * Math.PI / 180);  // 30° lead-in from the tip to the hook's middle
+    return [at(-0.015, zTop), at(0, zTop), at(mid, zLead), at(w, zLand), at(w, zTipLow), at(w - d45, zTipLow - d45), at(0, zTipLow - d45), at(-0.015, zTipLow - d45)];
+  }
+  // ends: { oa, ob } outward normals of the channel sides the two buttons sit in (default: along the strap)
+  function buildConnector(pa, pb, ctx, seg = 28, text = null, ends = null) {
+    const P = ctx.P, z0 = -P.trackH;
+    let ux = pb[0] - pa[0], uy = pb[1] - pa[1]; const L = Math.hypot(ux, uy) || 1; ux /= L; uy /= L;
+    const oa = (ends && ends.oa) || [ux, uy], ob = (ends && ends.ob) || [-ux, -uy];
+    const ha = handOf(oa, [ux, uy]), hb = handOf(ob, [-ux, -uy]);
+    const bp = buttonParts(P), Rc = bp.coreR, Ht = P.trackH - P.btnTopTol, zt = z0 + Ht, f = Math.min(P.btnFillet, Rc * 0.7, Ht * 0.6);
+    // core: a short cylinder with a filleted top, clear of the beads all the way up
+    const prof = [[Rc, z0], [Rc, zt - f]];
+    for (let j = 1; j <= 10; j++) { const a = Math.PI / 2 * j / 10; prof.push([Rc - f + f * Math.cos(a), zt - f + f * Math.sin(a)]); }
+    const core = (c) => sweep(prof.map(([r, z]) => { const s = []; for (let j = 0; j < seg; j++) { const a = 2 * Math.PI * j / seg; s.push([c[0] + r * Math.cos(a), c[1] + r * Math.sin(a), z]); } return s; }), false);
+    // a prism: a closed (o, z) section extruded along u from u0 to u1, in the button frame at c
+    const prism = (c, o, u0, u1, sec) => {
+      const u = [-o[1], o[0]];
+      const at = (uu) => sec.map(([oo, zz]) => [c[0] + u[0] * uu + o[0] * oo, c[1] + u[1] * uu + o[1] * oo, zz]);
+      return sweep([at(u0), at(u1)], false);
+    };
+    const button = (c, o, hand) => {
+      const shells = [core(c)];
+      for (const A of buttonParts(P, hand).arms) {
+        shells.push(prism(c, o, A.u0, A.u1, [[A.o0, z0], [A.o1, z0], [A.o1, -0.02], [A.o0, -0.02]]));
+        const face = A.sign > 0 ? A.o1 : A.o0;
+        shells.push(prism(c, o, A.barb[0], A.barb[1], barbSection(face, A.sign * P.barbOut, P)));
+      }
+      return shells;
+    };
+    // strap: a flat bar from button centre to button centre, label debossed into its underside
+    const T = P.slitH - P.strapTol, Wh = P.strapW / 2;
+    const nx = -uy, ny = ux;                                   // left of A -> B
+    const cs = [[pa[0] - nx * Wh, pa[1] - ny * Wh], [pb[0] - nx * Wh, pb[1] - ny * Wh], [pb[0] + nx * Wh, pb[1] + ny * Wh], [pa[0] + nx * Wh, pa[1] + ny * Wh]];   // CCW from above
+    const strap = { pos: [], idx: [] };
+    cs.forEach(p => strap.pos.push(p[0], p[1], z0));
+    cs.forEach(p => strap.pos.push(p[0], p[1], z0 + T));
+    strap.idx.push(4, 5, 6, 4, 6, 7);                          // top, facing up
+    for (let j = 0; j < 4; j++) { const k = (j + 1) % 4; strap.idx.push(j, k, 4 + k, j, 4 + k, 4 + j); }
+    let label = null;
+    if (text) {
+      // read along the strap, left to right, with the strap turned over
+      let rx = ux, ry = uy; if (rx < -1e-6 || (Math.abs(rx) < 1e-6 && ry < 0)) { rx = -rx; ry = -ry; }
+      const qx = -ry, qy = rx, mx = (pa[0] + pb[0]) / 2, my = (pa[1] + pb[1]) / 2;
+      const lab = cleanLabel(text.label), extra = cleanLabel(text.extra);
+      const fit = fitText(extra ? [[[`${lab} ${extra}`]], [[lab]]] : [[[lab]]], L - 2 * Rc - 0.12, 2 * Wh - 0.1, P.connLabelMaxCap, P.labelMinCap);
+      if (fit && !fit.rot) {
+        label = { text: fit.lines.join(' '), cap: fit.cap, centre: [mx, my], angle: Math.atan2(ry, rx) * 180 / Math.PI, groups: orientGroups(fit.groups.map(g => g.map(c => c.map(([X, Y]) => [mx + X * rx - Y * qx, my + X * ry - Y * qy])))) };
+      }
+    }
+    faceWithPockets(strap, [0, 1, 2, 3], z0, label ? label.groups : [], P.labelDepth);
+    return { shells: [...button(pa, oa, ha), ...button(pb, ob, hb), orientOut(strap)], length: L, label, hands: [ha, hb] };
+  }
+
+  // ---------------------------------------------------------- neighbors etc.
+  // ctx: {W (usable w), D (usable d), drawer, P, bodyH}
+  function planToWorldRect(b, ctx) {
+    const g = ctx.P.fitGap, Dd = ctx.drawer.d;
+    return { x0: g + b.x, x1: g + b.x + b.w, y0: Dd - g - (b.y + b.d), y1: Dd - g - b.y };
+  }
+  const worldToPlan = (x, y, ctx) => [x - ctx.P.fitGap, ctx.drawer.d - ctx.P.fitGap - y];
+
+  // Shared rim edges between containers
+  function neighborPairs(boxes, P = DEF) {
+    const out = [], e = 1e-4;
+    for (let i = 0; i < boxes.length; i++) for (let j = 0; j < boxes.length; j++) {
+      if (i === j) continue;
+      const a = boxes[i], b = boxes[j];
+      if (Math.abs(a.x + a.w - b.x) < e) {               // a left of b (plan)
+        const lo = Math.max(a.y, b.y), hi = Math.min(a.y + a.d, b.y + b.d);
+        if (hi - lo >= P.minShared) out.push({ a: a.id, b: b.id, axis: 'x', sa: 'right', sb: 'left', lo, hi });
+      }
+      if (Math.abs(a.y + a.d - b.y) < e) {               // a behind b (plan y grows to the front)
+        const lo = Math.max(a.x, b.x), hi = Math.min(a.x + a.w, b.x + b.w);
+        if (hi - lo >= P.minShared) out.push({ a: a.id, b: b.id, axis: 'y', sa: 'front', sb: 'back', lo, hi });
+      }
+    }
+    return out;
+  }
+  const needsConnector = (a, b, P = DEF) => draftOf(a, P).draft > 1e-6 || draftOf(b, P).draft > 1e-6;
+
+  // Shortest line between two facing slots. Returns the range along the shared direction
+  // (world) where a straight connector fits, or the fixed diagonal when the slots don't overlap.
+  function pairGeometry(pair, boxes, ctx) {
+    const A = boxes.find(x => x.id === pair.a), B = boxes.find(x => x.id === pair.b);
+    const sa = slotsOf(A, ctx).slots[pair.sa], sb = slotsOf(B, ctx).slots[pair.sb];
+    // slots run along world y for x-pairs, along world x for y-pairs
+    const k = pair.axis === 'x' ? 1 : 0;
+    const ra = [Math.min(sa.A[k], sa.B[k]), Math.max(sa.A[k], sa.B[k])], rb = [Math.min(sb.A[k], sb.B[k]), Math.max(sb.A[k], sb.B[k])];
+    const lo = Math.max(ra[0], rb[0]), hi = Math.min(ra[1], rb[1]);
+    const fa = pair.axis === 'x' ? sa.A[0] : sa.A[1], fb = pair.axis === 'x' ? sb.A[0] : sb.A[1];
+    if (hi >= lo) return { straight: true, lo, hi, fa, fb, k, oa: sa.o, ob: sb.o };
+    // no overlap: nearest slot ends
+    const aEnd = ra[1] < rb[0] ? ra[1] : ra[0], bEnd = ra[1] < rb[0] ? rb[0] : rb[1];
+    return { straight: false, lo: aEnd, hi: aEnd, fa, fb, k, aEnd, bEnd, oa: sa.o, ob: sb.o };
+  }
+  function connectorPoints(c, geo) {
+    if (geo.straight) {
+      const t = Math.max(geo.lo, Math.min(geo.hi, c.t));
+      return geo.k === 1 ? [[geo.fa, t], [geo.fb, t]] : [[t, geo.fa], [t, geo.fb]];
+    }
+    return geo.k === 1 ? [[geo.fa, geo.aEnd], [geo.fb, geo.bEnd]] : [[geo.aEnd, geo.fa], [geo.bEnd, geo.fb]];
+  }
+
+  // ----------------------------------------------------------------- export
+  function stlBinary(shells, scale = 25.4, shift = [0, 0, 0]) {
+    let n = 0; shells.forEach(s => n += s.idx.length / 3);
+    const buf = new ArrayBuffer(84 + 50 * n), dv = new DataView(buf);
+    const hdr = 'Drawer organizer - units mm';
+    for (let i = 0; i < hdr.length; i++) dv.setUint8(i, hdr.charCodeAt(i));
+    dv.setUint32(80, n, true);
+    let o = 84;
+    for (const s of shells) {
+      const P = s.pos, I = s.idx;
+      for (let t = 0; t < I.length; t += 3) {
+        const v = [I[t], I[t + 1], I[t + 2]].map(q => [(P[q * 3] + shift[0]) * scale, (P[q * 3 + 1] + shift[1]) * scale, (P[q * 3 + 2] + shift[2]) * scale]);
+        const e1 = [v[1][0] - v[0][0], v[1][1] - v[0][1], v[1][2] - v[0][2]], e2 = [v[2][0] - v[0][0], v[2][1] - v[0][1], v[2][2] - v[0][2]];
+        let nx = e1[1] * e2[2] - e1[2] * e2[1], ny = e1[2] * e2[0] - e1[0] * e2[2], nz = e1[0] * e2[1] - e1[1] * e2[0];
+        const l = Math.hypot(nx, ny, nz) || 1;
+        dv.setFloat32(o, nx / l, true); dv.setFloat32(o + 4, ny / l, true); dv.setFloat32(o + 8, nz / l, true); o += 12;
+        for (const p of v) { dv.setFloat32(o, p[0], true); dv.setFloat32(o + 4, p[1], true); dv.setFloat32(o + 8, p[2], true); o += 12; }
+        dv.setUint16(o, 0, true); o += 2;
+      }
+    }
+    return new Uint8Array(buf);
+  }
+  // minimal ZIP (store, no compression)
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  const crc32 = u8 => { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+  function zip(files) {
+    const enc = s => new TextEncoder().encode(s);
+    const parts = [], central = []; let off = 0;
+    for (const f of files) {
+      const name = enc(f.name), data = typeof f.data === 'string' ? enc(f.data) : f.data, crc = crc32(data);
+      const h = new DataView(new ArrayBuffer(30));
+      h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(8, 0, true);
+      h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, name.length, true);
+      parts.push(new Uint8Array(h.buffer), name, data);
+      const c = new DataView(new ArrayBuffer(46));
+      c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true);
+      c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true); c.setUint16(28, name.length, true); c.setUint32(42, off, true);
+      central.push(new Uint8Array(c.buffer), name);
+      off += 30 + name.length + data.length;
+    }
+    const csize = central.reduce((s, a) => s + a.length, 0);
+    const e = new DataView(new ArrayBuffer(22));
+    e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, csize, true); e.setUint32(16, off, true);
+    const all = parts.concat(central, [new Uint8Array(e.buffer)]);
+    const out = new Uint8Array(all.reduce((s, a) => s + a.length, 0)); let p = 0;
+    for (const a of all) { out.set(a, p); p += a.length; }
+    return out;
+  }
+
+  return {
+    MM, COINS, DEF, squareToQuad, applyH, invert3, orderQuad, floorFromCoin, fitAxisEllipse, robustEllipse, findRim, findRimByColor,
+    overlaps, cap, generate, STYLES, mulberry, draftOf, blendOf, bowlOf, trackOffset, domeQ, bowlQ, outerProfile, innerProfile, surfaceZ,
+    shapeOf, rrRing, sdRR, sweep, signedVolume, buildContainer, buildTracks, buildConnector, buttonParts, buttonFootprint, barbSection, handOf, baseRect, slotsOf, sideSlots, loopOf, loopCurve,
+    cleanLabel, textLine, fitText, faceWithPockets, placeContainerLabel,
+    planToWorldRect, worldToPlan, neighborPairs, needsConnector, pairGeometry, connectorPoints, stlBinary, zip, crc32,
+  };
+})();
+if (typeof module !== 'undefined') module.exports = K;
+
+</script>
+<script>
+(function () {
+'use strict';
+const $ = s => document.querySelector(s);
+const NS = 'http://www.w3.org/2000/svg';
+const f2 = v => (Math.round(v * 100) / 100).toString();
+const fmt = (v, d = 2) => v.toFixed(d).replace(/\.?0+$/, '');
+const P = { ...K.DEF };
+
+// ===================================================================== 01 MEASURE
+(function measure() {
+  const FW = 20.25, FD = 14.5, coin = { u: 13.6, v: 9.4, d: 0.955 };
+  // pinhole camera above the floor, tilted toward it, turned by yaw
+  function project(tilt, yaw) {
+    const t = tilt * Math.PI / 180, y = yaw * Math.PI / 180;
+    const cx = FW / 2, cy = FD / 2, dist = 24, f = 820;
+    const cam = [cx - dist * Math.cos(t) * Math.sin(y), cy + dist * Math.cos(t) * Math.cos(y), dist * Math.sin(t)];
+    const fwd = [cx - cam[0], cy - cam[1], -cam[2]], L = Math.hypot(...fwd); fwd.forEach((v, i) => fwd[i] = v / L);
+    let right = [fwd[1], -fwd[0], 0]; const rl = Math.hypot(...right); right = right.map(v => v / rl);
+    const up = [right[1] * fwd[2] - right[2] * fwd[1], right[2] * fwd[0] - right[0] * fwd[2], right[0] * fwd[1] - right[1] * fwd[0]];
+    return (u, v) => {
+      const d = [u - cam[0], v - cam[1], -cam[2]];
+      const z = d[0] * fwd[0] + d[1] * fwd[1] + d[2] * fwd[2];
+      return [f * (d[0] * right[0] + d[1] * right[1] + d[2] * right[2]) / z, -f * (d[0] * up[0] + d[1] * up[1] + d[2] * up[2]) / z];
+    };
+  }
+  let rnd = 1;
+  const rand = () => { rnd = (rnd * 16807) % 2147483647; return rnd / 2147483647; };
+  function draw() {
+    const tilt = +$('#m-tilt').value, yaw = +$('#m-yaw').value, noise = +$('#m-noise').value;
+    $('#m-tilt-o').textContent = tilt + '°'; $('#m-yaw-o').textContent = yaw + '°'; $('#m-noise-o').textContent = fmt(noise, 1) + ' %';
+    const pr = project(tilt, yaw);
+    // the floor corners in "photo" order: back-left, back-right, front-right, front-left
+    const raw = [pr(0, FD), pr(FW, FD), pr(FW, 0), pr(0, 0)];
+    const xs = raw.map(p => p[0]), ys = raw.map(p => p[1]);
+    const sx = Math.min(...xs), sy = Math.min(...ys), sc = Math.min(360 / (Math.max(...xs) - sx), 260 / (Math.max(...ys) - sy));
+    const ox = (400 - (Math.max(...xs) - sx) * sc) / 2, oy = (300 - (Math.max(...ys) - sy) * sc) / 2;
+    const S = p => [ox + (p[0] - sx) * sc, oy + (p[1] - sy) * sc];
+    const quad = raw.map(S);
+    // rim points: the true circle projected, plus detection noise (in px of this view)
+    rnd = 7;
+    const cc = S(pr(coin.u, coin.v)), rim = [];
+    let rpx = 0;
+    for (let k = 0; k < 64; k++) { const a = 2 * Math.PI * k / 64, p = S(pr(coin.u + coin.d / 2 * Math.cos(a), coin.v + coin.d / 2 * Math.sin(a))); rpx += Math.hypot(p[0] - cc[0], p[1] - cc[1]) / 64; rim.push(p); }
+    // detection noise, as a share of the coin's radius (the app zooms in on the coin before fitting)
+    rim.forEach(p => { p[0] += (rand() - 0.5) * 2 * noise / 100 * rpx; p[1] += (rand() - 0.5) * 2 * noise / 100 * rpx; });
+    // measure: homography from the quad, rim back to the unit square, robust ellipse, floor size
+    const H = K.squareToQuad(quad), Hi = K.invert3(H);
+    const uv = rim.map(p => K.applyH(Hi, p[0], p[1]));
+    const e = K.robustEllipse(uv);
+    const est = e ? K.floorFromCoin(coin.d, e.rx, e.ry) : null;
+    // photo view
+    const grid = [];
+    for (let i = 1; i < 9; i++) { const a = S(pr(FW * i / 9, 0)), b = S(pr(FW * i / 9, FD)); grid.push(`<line x1="${f2(a[0])}" y1="${f2(a[1])}" x2="${f2(b[0])}" y2="${f2(b[1])}" class="s-ax" stroke-width=".5" opacity=".55"/>`); }
+    for (let i = 1; i < 6; i++) { const a = S(pr(0, FD * i / 6)), b = S(pr(FW, FD * i / 6)); grid.push(`<line x1="${f2(a[0])}" y1="${f2(a[1])}" x2="${f2(b[0])}" y2="${f2(b[1])}" class="s-ax" stroke-width=".5" opacity=".55"/>`); }
+    const circ = [];
+    for (let k = 0; k <= 48; k++) { const a = 2 * Math.PI * k / 48; circ.push(S(pr(coin.u + coin.d / 2 * Math.cos(a), coin.v + coin.d / 2 * Math.sin(a)))); }
+    $('#m-photo').innerHTML = `<polygon points="${quad.map(p => p.map(f2).join(',')).join(' ')}" class="f-panel s-ink" stroke-width="1.4"/>${grid.join('')}` +
+      `<polygon points="${circ.map(p => p.map(f2).join(',')).join(' ')}" class="f-wall"/>` +
+      rim.map(p => `<circle cx="${f2(p[0])}" cy="${f2(p[1])}" r="1.1" class="f-acc"/>`).join('') +
+      quad.map(p => `<circle cx="${f2(p[0])}" cy="${f2(p[1])}" r="5" class="f-bg s-acc" stroke-width="2"/>`).join('') +
+      (() => { const zx = 52, zy = 246, Z = 40 / rpx; return `<rect x="${zx - 46}" y="${zy - 46}" width="92" height="92" rx="6" class="f-bg s-ax"/><polygon points="${circ.map(p => `${f2(zx + (p[0] - cc[0]) * Z)},${f2(zy + (p[1] - cc[1]) * Z)}`).join(' ')}" class="f-wall"/>` + rim.map(p => `<circle cx="${f2(zx + (p[0] - cc[0]) * Z)}" cy="${f2(zy + (p[1] - cc[1]) * Z)}" r="1.4" class="f-acc"/>`).join('') + `<text x="${zx}" y="${zy + 42}" text-anchor="middle" font-size="9" class="t">coin, zoomed</text>`; })();
+    // rectified view: unit square drawn at the true aspect
+    const aw = 250, ah = 250, rx0 = 20, ry0 = 25;
+    const U = p => [rx0 + p[0] * aw, ry0 + p[1] * ah];
+    // the unit square's v runs from the first corner (back-left) to the last (front-left)
+    let fl = `<rect x="${rx0}" y="${ry0}" width="${aw}" height="${f2(ah)}" class="f-panel s-ink" stroke-width="1.4"/>`;
+    for (let i = 1; i < 9; i++) fl += `<line x1="${f2(rx0 + aw * i / 9)}" y1="${f2(ry0)}" x2="${f2(rx0 + aw * i / 9)}" y2="${f2(ry0 + ah)}" class="s-ax" stroke-width=".5" opacity=".55"/>`;
+    for (let i = 1; i < 6; i++) fl += `<line x1="${rx0}" y1="${f2(ry0 + ah * i / 6)}" x2="${rx0 + aw}" y2="${f2(ry0 + ah * i / 6)}" class="s-ax" stroke-width=".5" opacity=".55"/>`;
+    fl += uv.map(p => { const q = U(p); return `<circle cx="${f2(q[0])}" cy="${f2(q[1])}" r="1.1" class="f-acc"/>`; }).join('');
+    if (e) {
+      // zoomed inset of the fitted ellipse in unit-square coordinates (x stretched like the square)
+      const zx = 334, zy = 150, Z = 0.42 / Math.max(e.rx, e.ry) * 0.5;
+      fl += `<g transform="translate(0,0)"><rect x="${zx - 52}" y="${zy - 52}" width="104" height="104" rx="6" class="f-bg s-ax"/>` +
+        `<ellipse cx="${zx}" cy="${zy}" rx="${f2(e.rx * Z * 100)}" ry="${f2(e.ry * Z * 100)}" class="s-acc" stroke-width="1.6"/>` +
+        `<line x1="${zx}" y1="${zy}" x2="${f2(zx + e.rx * Z * 100)}" y2="${zy}" class="s-acc" stroke-width="1"/><line x1="${zx}" y1="${zy}" x2="${zx}" y2="${f2(zy - e.ry * Z * 100)}" class="s-acc" stroke-width="1"/>` +
+        `<text x="${f2(zx + e.rx * Z * 50)}" y="${zy + 12}" text-anchor="middle" font-size="10" class="t-acc">a</text><text x="${zx + 6}" y="${f2(zy - e.ry * Z * 50 + 3)}" font-size="10" class="t-acc">b</text>` +
+        `<text x="${zx}" y="${zy + 46}" text-anchor="middle" font-size="9" class="t">coin, zoomed</text></g>`;
+    }
+    $('#m-flat').innerHTML = fl;
+    const err = est ? Math.max(Math.abs(est.w - FW) / FW, Math.abs(est.d - FD) / FD) * 100 : NaN;
+    $('#m-stats').innerHTML = est ? `<span>Measured <b>${fmt(est.w)} × ${fmt(est.d)} in</b></span><span>True <b>${FW} × ${FD} in</b></span><span>Error <b>${err.toFixed(2)} %</b></span><span>Quarter <b>${coin.d} in</b></span>` : '<span>Ellipse fit failed</span>';
+  }
+  ['#m-tilt', '#m-yaw', '#m-noise'].forEach(id => $(id).addEventListener('input', draw));
+  draw();
+})();
+
+// ===================================================================== 02 GENERATE
+(function generate() {
+  const FL = { w: 20, d: 14 };
+  let seed = 3;
+  function draw() {
+    const n = +$('#g-n').value;
+    $('#g-n-o').textContent = n;
+    const res = K.generate(FL, n, seed, 0.5, 3);
+    const k = FL.w / 160;
+    $('#g-opts').innerHTML = res.options.map(o => {
+      const rects = o.rects.map(r => `<rect x="${r.x + 0.08}" y="${r.y + 0.08}" width="${r.w - 0.16}" height="${r.d - 0.16}" rx="${Math.min(0.45, r.w / 4, r.d / 4)}" class="f-soft s-acc" stroke-width="${1.2 * k}"/>`).join('');
+      return `<figure><svg viewBox="-0.3 -0.3 ${FL.w + 0.6} ${FL.d + 0.6}" role="img" aria-label="${o.name}: ${o.rects.length} containers"><rect x="-0.15" y="-0.15" width="${FL.w + 0.3}" height="${FL.d + 0.3}" class="f-bg s-ink" stroke-width="${1.4 * k}"/>${rects}</svg><figcaption>${o.name}</figcaption></figure>`;
+    }).join('');
+    const minSide = Math.min(...res.options.flatMap(o => o.rects.map(r => Math.min(r.w, r.d))));
+    $('#g-stats').innerHTML = `<span>Floor <b>20 × 14 in</b></span><span>Up to <b>${res.maxN}</b> fit at 3 × 3 in</span><span>Smallest side <b>${fmt(minSide)} in</b></span><span>Seed <b>${seed}</b></span>`;
+  }
+  $('#g-n').addEventListener('input', draw);
+  $('#g-regen').addEventListener('click', () => { seed++; draw(); });
+  draw();
+})();
+
+// ===================================================================== 03 SHAPE (section)
+(function shape() {
+  const W = 6, Dp = 5, Hb = 3.0;           // a 6 x 5 in container in a 3.5 in drawer
+  const st = { type: 'dome' };
+  const sx = 88, ox = 48, oy = 336;        // 88 px per inch, origin at the rim's left edge, z = 0 line
+  const X = x => ox + x * sx, Y = z => oy - z * sx;
+  function draw() {
+    const slant = +$('#c-slant').value, blend = +$('#c-blend').value, bowlWant = +$('#c-bowl').value, wallMM = +$('#c-wall').value;
+    const PP = Object.assign({}, P, { wall: wallMM / 25.4 });
+    const b = { w: W, d: Dp, slant, blend, bowl: bowlWant, type: st.type };
+    const ctx = { P: PP, bodyH: Hb, drawer: { w: W + 0.125, d: Dp + 0.125, h: 3.5 } };
+    const dr = K.draftOf(b, PP), bl = K.blendOf(b, ctx), D = dr.draft, R = bl.r;
+    const prof = K.outerProfile(D, Hb, R, PP), inn = K.innerProfile(prof, PP.wall, Hb);
+    $('#c-wall-o').textContent = wallMM.toFixed(1) + ' mm';
+    const bw = K.bowlOf(b, ctx, prof);
+    $('#c-slant-o').textContent = slant < 1e-6 ? 'straight' : fmt(D) + ' in';
+    $('#c-blend-o').textContent = fmt(R, 3) + ' in';
+    $('#c-bowl-o').textContent = fmt(bw.depth) + ' in';
+    $('#c-bowl-w').style.display = st.type === 'dome' ? '' : 'none';
+    // outer outline: left wall rim -> floor -> right wall rim (insets measured from the rim)
+    const outer = prof.slice().reverse().map(([i, z]) => [i, z]).concat(prof.map(([i, z]) => [W - i, z]));
+    // inner surface
+    let inner;
+    if (st.type === 'dome') {
+      const zc = P.bowlFloor, zE = Math.min(Hb, zc + bw.depth);
+      const wallPts = [];
+      for (let k = inn.length - 1; k >= 0; k--) { const [i, z] = inn[k]; if (z > zE) wallPts.push([i, z]); else { const [i1, z1] = inn[k + 1]; const s = (z1 - zE) / ((z1 - z) || 1); wallPts.push([i1 + (i - i1) * s, zE]); break; } }
+      const iE = wallPts[wallPts.length - 1][0], mE = Math.min(W, Dp) / 2 - iE - 0.03;
+      const bowl = [];
+      for (let j = 1; j <= 24; j++) { const s = Math.pow(j / 24, 1.6), i = iE + s * mE; bowl.push([i, Math.max(zE - (zE - zc) * K.bowlQ(P.domeF, s), K.surfaceZ(prof, i) + PP.wall)]); }
+      const half = wallPts.concat(bowl);
+      inner = half.concat(half.slice().reverse().map(([i, z]) => [W - i, z]));
+    } else {
+      const half = inn.slice().reverse();
+      inner = half.concat(half.slice().reverse().map(([i, z]) => [W - i, z]));
+    }
+    const poly = pts => pts.map(([x, z]) => `${f2(X(x))},${f2(Y(z))}`).join(' ');
+    // solid between outer and inner (body), drawn as one polygon: outer forward, inner backward
+    const body = outer.concat(inner.slice().reverse());
+    // tracks under the base: offsets from the base edge (x = D) on both sides
+    const L = { o: K.trackOffset(Math.min(W, Dp) - 2 * D, P) };
+    const j = { outer: L.o, chanOut: L.o + P.ringT, chanIn: L.o + P.ringT + P.slotW, inner: L.o + 2 * P.ringT + P.slotW };
+    const zTop = jj => K.surfaceZ(prof, D + jj);
+    let tr = '';
+    for (const side of [0, 1]) {
+      const xAt = jj => side ? W - D - jj : D + jj;
+      const wall = (j0, j1, zb) => { const a = xAt(j0), c = xAt(j1); return `<polygon points="${poly([[a, zb], [a, zTop(j0)], [c, zTop(j1)], [c, zb]])}" class="f-wall"/>`; };
+      tr += wall(j.outer, j.chanOut, -P.trackH + P.slitH) + wall(j.chanIn, j.inner, -P.trackH);
+      tr += `<circle cx="${f2(X(xAt(j.chanIn)))}" cy="${f2(Y(-P.trackH + P.slitH))}" r="${f2(P.beadR * sx)}" class="f-wall"/>`;
+      tr += `<path d="M${f2(X(xAt(j.chanOut)) - P.beadR * sx)} ${f2(Y(-P.trackH + P.slitH))} a${f2(P.beadR * sx)} ${f2(P.beadR * sx)} 0 0 1 ${f2(2 * P.beadR * sx)} 0z" class="f-wall"/>`;
+    }
+    const zE = P.bowlFloor + bw.depth;
+    let s = `<line x1="0" y1="${f2(Y(-P.trackH))}" x2="720" y2="${f2(Y(-P.trackH))}" class="s-ax" stroke-width="1" stroke-dasharray="4 4"/>` +
+      `<text x="8" y="${f2(Y(-P.trackH) + 14)}" font-size="10" class="t">drawer floor</text>` +
+      tr + `<polygon points="${poly(body)}" class="${st.type === 'dome' ? 'f-dome' : 'f-base'} s-ink" stroke-width="1.2" stroke-linejoin="round"/>`;
+    // dimensions
+    s += `<line x1="${X(0)}" y1="${Y(Hb) - 18}" x2="${X(W)}" y2="${Y(Hb) - 18}" class="s-mut" stroke-width=".8"/><text x="${X(W / 2)}" y="${Y(Hb) - 24}" text-anchor="middle" font-size="11" class="t">rim ${W} in</text>`;
+    s += `<line x1="${X(W) + 22}" y1="${Y(0)}" x2="${X(W) + 22}" y2="${Y(Hb)}" class="s-mut" stroke-width=".8"/><text x="${X(W) + 28}" y="${f2(Y(Hb / 2))}" font-size="11" class="t">body ${Hb} in</text>`;
+    s += `<line x1="${X(W) + 22}" y1="${Y(-P.trackH)}" x2="${X(W) + 22}" y2="${Y(0)}" class="s-acc" stroke-width="1.2"/><text x="${X(W) + 28}" y="${f2(Y(-P.trackH / 2) + 4)}" font-size="11" class="t-acc">base ${P.trackH}</text>`;
+    s += `<text x="${X(W) + 28}" y="${f2(Y(Hb / 2) + 16)}" font-size="11" class="t">${fmt(Hb + P.trackH)} in with base</text>`;
+    if (D > 1e-6) s += `<line x1="${X(0)}" y1="${Y(0) + 40}" x2="${X(D)}" y2="${Y(0) + 40}" class="s-acc" stroke-width="1.2"/><text x="${X(D) + 6}" y="${Y(0) + 44}" font-size="11" class="t-acc">slant ${fmt(D)}</text>`;
+    if (st.type === 'dome') s += `<line x1="${X(W / 2) - 70}" y1="${f2(Y(zE))}" x2="${X(W / 2) + 70}" y2="${f2(Y(zE))}" class="s-acc" stroke-width=".8" stroke-dasharray="3 3"/><text x="${X(W / 2) + 76}" y="${f2(Y(zE) + 4)}" font-size="11" class="t-acc">bowl ${fmt(bw.depth)}</text>`;
+    $('#c-sec').innerHTML = s;
+    const notes = [];
+    if (dr.capped) notes.push('slant capped');
+    if (bl.capped) notes.push('blend capped');
+    if (st.type === 'dome' && bw.raised) notes.push('bowl raised to clear the blend');
+    $('#c-stats').innerHTML = `<span>Rim <b>${W} × ${Dp} in</b></span><span>Base <b>${fmt(W - 2 * D)} × ${fmt(Dp - 2 * D)} in</b></span><span>Corner at rim <b>${fmt(R + D)} in</b></span><span>Track margin <b>${fmt(L.o)} in</b></span>${notes.length ? `<span style="color:var(--warn)">${notes.join(' · ')}</span>` : ''}`;
+  }
+  $('#c-type').addEventListener('click', e => { const bt = e.target.closest('[data-t]'); if (!bt) return; st.type = bt.dataset.t; document.querySelectorAll('#c-type button').forEach(x => x.setAttribute('aria-pressed', String(x === bt))); draw(); });
+  ['#c-slant', '#c-blend', '#c-bowl', '#c-wall'].forEach(id => $(id).addEventListener('input', draw));
+  draw();
+})();
+
+// ===================================================================== 04 CONNECT (plan)
+const LAYOUT = (() => {
+  const B = (id, label, name, x, y, w, d, type, slant, blend, bowl) => ({ id, label, name, x, y, w, d, type, slant, blend, bowl });
+  return [
+    B('a', 'C01', 'COINS', 0, 0, 6, 5, 'dome', 0, 0.5, 1.6), B('b', 'C02', 'PENS', 6, 0, 4, 5, 'standard', 0, 0.5), B('c', 'C03', 'TOOLS', 10, 0, 8, 5, 'standard', 0.6, 1.0),
+    B('d', 'C04', 'CLIPS', 0, 5, 3, 7, 'dome', 0.3, 0.4, 1.4), B('e', 'C05', 'BATTERIES', 3, 5, 5, 3.5, 'standard', 0, 0.75), B('f', 'C07', 'SD', 3, 8.5, 5, 3.5, 'dome', 0, 0.6, 1.2),
+    B('g', 'C06', 'CABLES', 8, 5, 10, 7, 'standard', 0.5, 0.75)];
+})();
+const DRAWER = { w: 18.125, d: 12.125, h: 3.5 };
+const CTX = { P, drawer: DRAWER, bodyH: DRAWER.h - P.headroom - P.trackH };
+function connectorsFor(boxes) {
+  const out = [], flush = [];
+  for (const p of K.neighborPairs(boxes, P)) {
+    const A = boxes.find(x => x.id === p.a), B = boxes.find(x => x.id === p.b);
+    if (!K.needsConnector(A, B, P)) { flush.push({ p, A, B }); continue; }
+    const g = K.pairGeometry(p, boxes, CTX), pts = K.connectorPoints({ t: (g.lo + g.hi) / 2 }, g);
+    out.push({ A, B, pts, oa: g.oa, ob: g.ob, straight: g.straight, len: Math.hypot(pts[1][0] - pts[0][0], pts[1][1] - pts[0][1]) });
+  }
+  return { conns: out, flush };
+}
+(function connect() {
+  let mode = 'design';
+  const sc = 38, ox = 18, oy = 10;
+  function draw() {
+    const boxes = LAYOUT.map(b => ({ ...b, slant: mode === 'design' ? b.slant : mode === 'straight' ? 0 : 0.5 }));
+    const { conns, flush } = connectorsFor(boxes);
+    const X = x => ox + x * sc, Y = y => oy + (DRAWER.d - y) * sc;          // world -> svg (front at the bottom)
+    let s = `<rect x="${X(0)}" y="${Y(DRAWER.d)}" width="${DRAWER.w * sc}" height="${DRAWER.d * sc}" class="f-bg s-ink" stroke-width="1.5"/>`;
+    for (const b of boxes) {
+      const L = K.loopOf(b, CTX), base = L.base, r = K.planToWorldRect(b, CTX);
+      s += `<rect x="${X(r.x0)}" y="${Y(r.y1)}" width="${(r.x1 - r.x0) * sc}" height="${(r.y1 - r.y0) * sc}" rx="${(L.R + L.D) * sc}" fill="none" class="s-ax" stroke-width="1" stroke-dasharray="3 3"/>`;
+      for (const [jj, cls] of [[0, b.type === 'dome' ? 'f-dome' : 'f-base'], [L.j.outer, 'f-wall'], [L.j.chanOut, 'f-bg'], [L.j.chanIn, 'f-wall'], [L.j.inner, b.type === 'dome' ? 'f-dome' : 'f-base']]) {
+        const w = 2 * (L.hw - jj), h = 2 * (L.hd - jj); if (w <= 0 || h <= 0) continue;
+        s += `<rect x="${X(L.cx - L.hw + jj)}" y="${Y(L.cy + L.hd - jj)}" width="${w * sc}" height="${h * sc}" rx="${Math.max(0.01, L.R - jj) * sc}" class="${cls}"/>`;
+      }
+      s += `<text x="${X(L.cx)}" y="${Y(L.cy) + 4}" text-anchor="middle" font-size="11" class="t-ink">${b.label}</text>`;
+    }
+    for (const { p, A } of flush) {
+      const rA = K.planToWorldRect(A, CTX), g = P.fitGap;
+      if (p.axis === 'x') s += `<line x1="${X(rA.x1)}" y1="${Y(DRAWER.d - g - p.lo)}" x2="${X(rA.x1)}" y2="${Y(DRAWER.d - g - p.hi)}" class="good" stroke-width="2.5" stroke-dasharray="6 4"/>`;
+      else s += `<line x1="${X(g + p.lo)}" y1="${Y(rA.y0)}" x2="${X(g + p.hi)}" y2="${Y(rA.y0)}" class="good" stroke-width="2.5" stroke-dasharray="6 4"/>`;
+    }
+    const R = P.strapW / 2 * sc, Rin = P.strapW / 2;
+    let flagged = 0;
+    for (const c of conns) {
+      const [a, b] = c.pts, n = Math.ceil(c.len / 0.05);
+      let clash = false;
+      for (const o of boxes) {
+        if (o === c.A || o === c.B || clash) continue;
+        const L = K.loopOf(o, CTX), jj = L.j.chanIn - P.beadR;
+        for (let i = 1; i < n && !clash; i++) { const px = a[0] + (b[0] - a[0]) * i / n, py = a[1] + (b[1] - a[1]) * i / n; if (K.sdRR(px, py, L.cx, L.cy, L.hw - jj, L.hd - jj, Math.max(0, L.R - jj)) < Rin) clash = true; }
+      }
+      if (clash) flagged++;
+      s += `<line x1="${X(a[0])}" y1="${Y(a[1])}" x2="${X(b[0])}" y2="${Y(b[1])}" style="stroke:${clash ? 'var(--warn)' : 'var(--accent)'}" stroke-width="${2 * R}" stroke-linecap="butt"/>`;
+      const d = [(b[0] - a[0]) / c.len, (b[1] - a[1]) / c.len];
+      for (const [pt, o, h] of [[a, c.oa, K.handOf(c.oa, d)], [b, c.ob, K.handOf(c.ob, [-d[0], -d[1]])]]) s += K.buttonFootprint(pt, o, P, h).map(poly => `<polygon points="${poly.map(q => `${f2(X(q[0]))},${f2(Y(q[1]))}`).join(' ')}" class="f-acc-ink"/>`).join('');
+    }
+    $('#k-plan').innerHTML = s;
+    const diag = conns.filter(c => !c.straight).length;
+    $('#k-stats').innerHTML = `<span>Neighbour pairs <b>${conns.length + flush.length}</b></span><span>Connectors <b>${conns.length}</b></span><span>Flush edges <b style="color:var(--good)">${flush.length}</b></span><span>Diagonal straps <b>${diag}</b></span><span>Flagged <b style="color:${flagged ? 'var(--warn)' : 'inherit'}">${flagged}</b></span>${conns.length ? `<span>Straps <b>${fmt(Math.min(...conns.map(c => c.len)))}–${fmt(Math.max(...conns.map(c => c.len)))} in</b></span>` : ''}`;
+  }
+  $('#k-mode').addEventListener('click', e => { const bt = e.target.closest('[data-k]'); if (!bt) return; mode = bt.dataset.k; document.querySelectorAll('#k-mode button').forEach(x => x.setAttribute('aria-pressed', String(x === bt))); draw(); });
+  draw();
+})();
+
+// ===================================================================== 05 LABEL (triangulation)
+(function label() {
+  const svg = $('#l-mesh');
+  if (typeof THREE === 'undefined') { svg.innerHTML = '<text x="20" y="40" font-size="13" class="t">The triangulation needs three.js, which did not load.</text>'; return; }
+  const fw = 3.4, fh = 1.3;                         // a patch of underside, inches
+  const fit = K.fitText([[['C01', 'COINS']]], fw - 0.3, fh - 0.2, 0.42, 0.09);
+  // mirror like the real part, then flip back for display so it reads here
+  const groups = fit.groups.map(g => g.map(c => c.map(([x, y]) => [x, y])));
+  const mesh = { pos: [], idx: [] };
+  const corners = [[-fw / 2, -fh / 2], [fw / 2, -fh / 2], [fw / 2, fh / 2], [-fw / 2, fh / 2]];
+  corners.forEach(p => mesh.pos.push(p[0], p[1], 0));
+  // orient: outlines CCW, counters CW
+  const area = c => { let a = 0; for (let i = 0; i < c.length; i++) { const p = c[i], q = c[(i + 1) % c.length]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; };
+  const og = groups.map(g => g.map((c, k) => ((k === 0 ? area(c) < 0 : area(c) > 0) ? c.slice().reverse() : c)));
+  K.faceWithPockets(mesh, [0, 1, 2, 3], 0, og, P.labelDepth);
+  const sc = 200, ox = 360, oy = 150;
+  const X = x => ox + x * sc, Y = y => oy - y * sc;
+  let face = '', pock = '', nf = 0, np = 0;
+  for (let t = 0; t < mesh.idx.length; t += 3) {
+    const v = [mesh.idx[t], mesh.idx[t + 1], mesh.idx[t + 2]].map(i => [mesh.pos[i * 3], mesh.pos[i * 3 + 1], mesh.pos[i * 3 + 2]]);
+    const zs = v.map(p => p[2]);
+    if (zs.every(z => z < 1e-9)) { face += `<polygon points="${v.map(p => `${f2(X(p[0]))},${f2(Y(p[1]))}`).join(' ')}" class="f-bg s-ax" stroke-width=".6" stroke-linejoin="round"/>`; nf++; }
+    else if (zs.every(z => z > 1e-9)) { pock += `<polygon points="${v.map(p => `${f2(X(p[0]))},${f2(Y(p[1]))}`).join(' ')}" class="f-soft s-acc" stroke-width=".5" stroke-linejoin="round"/>`; np++; }
+  }
+  svg.innerHTML = `<rect x="${X(-fw / 2)}" y="${Y(fh / 2)}" width="${fw * sc}" height="${fh * sc}" class="f-panel"/>` + face + pock +
+    `<rect x="${X(-fw / 2)}" y="${Y(fh / 2)}" width="${fw * sc}" height="${fh * sc}" fill="none" class="s-ink" stroke-width="1.2"/>`;
+  $('#l-count').textContent = `${nf} face · ${np} pocket triangles`;
+  // a whole connector strap with its label: check it is closed
+  const con = K.buildConnector([0, 0], [2.6, 0], CTX, 32, { label: 'K03', extra: 'C02-C06' });
+  let tris = 0, open = 0;
+  for (const sh of con.shells) {
+    const E = new Map();
+    for (let t = 0; t < sh.idx.length; t += 3) for (let e = 0; e < 3; e++) { const a = sh.idx[t + e], b = sh.idx[t + (e + 1) % 3]; E.set(a + ',' + b, (E.get(a + ',' + b) || 0) + 1); }
+    for (const [k2, n] of E) { const [a, b] = k2.split(','); if (n !== 1 || E.get(b + ',' + a) !== 1) open++; }
+    tris += sh.idx.length / 3;
+  }
+  $('#l-stats').innerHTML = `<span>Letter height <b>${fmt(fit.cap * 25.4, 1)} mm</b></span><span>Depth <b>0.5 mm</b></span><span>Connector K03 with label <b>${tris.toLocaleString()} triangles</b></span><span>Open edges <b style="color:${open ? 'var(--warn)' : 'var(--good)'}">${open}</b></span>`;
+})();
+
+// ===================================================================== 06 PRINT
+const BP = K.buttonParts(P);
+(function printPlan() {
+  // u along the channel (x on screen), o across it (up on screen = toward the outer wall)
+  const sc = 330, cx = 360, cy = 196;
+  const X = u => cx + u * sc, Y = o => cy - o * sc;
+  const half = P.slotW / 2, crest = half - P.beadR;
+  const rect = (u0, u1, o0, o1, cls, extra = '') => `<rect x="${f2(X(Math.min(u0, u1)))}" y="${f2(Y(Math.max(o0, o1)))}" width="${f2(Math.abs(u1 - u0) * sc)}" height="${f2(Math.abs(o1 - o0) * sc)}" class="${cls}" ${extra}/>`;
+  let s = '';
+  // walls and beads
+  s += rect(-1.1, 1.1, half, half + P.ringT, 'f-wall') + rect(-1.1, 1.1, -half - P.ringT, -half, 'f-wall');
+  s += rect(-1.1, 1.1, crest, half, 'f-wall', 'opacity=".55"') + rect(-1.1, 1.1, -half, -crest, 'f-wall', 'opacity=".55"');
+  s += `<line x1="0" y1="${f2(Y(crest))}" x2="720" y2="${f2(Y(crest))}" class="s-mut" stroke-width=".8" stroke-dasharray="4 3"/><line x1="0" y1="${f2(Y(-crest))}" x2="720" y2="${f2(Y(-crest))}" class="s-mut" stroke-width=".8" stroke-dasharray="4 3"/>`;
+  // strap leaving under the outer wall
+  s += rect(-P.strapW / 2, P.strapW / 2, 0, half + P.ringT + 0.12, 'f-acc', 'opacity=".35"');
+  // core and arms
+  s += `<circle cx="${X(0)}" cy="${Y(0)}" r="${f2(BP.coreR * sc)}" class="f-acc"/>`;
+  for (const A of BP.arms) {
+    s += rect(A.u0, A.u1, A.o0, A.o1, 'f-acc');
+    const face = A.sign > 0 ? A.o1 : A.o0, tip = A.sign * P.barbOut;
+    s += rect(A.barb[0], A.barb[1], face, tip, 'f-acc');
+    // flex arrow at the tip, pointing toward the core
+    const ux = X((A.barb[0] + A.barb[1]) / 2), y0 = Y(tip + A.sign * 0.05), y1 = Y(tip - A.sign * 0.07);
+    s += `<line x1="${f2(ux)}" y1="${f2(y0)}" x2="${f2(ux)}" y2="${f2(y1)}" class="s-acc" stroke-width="1.6"/><path d="M${f2(ux - 5)} ${f2(y1 + (A.sign > 0 ? -7 : 7))} L${f2(ux)} ${f2(y1)} L${f2(ux + 5)} ${f2(y1 + (A.sign > 0 ? -7 : 7))}" class="s-acc" stroke-width="1.6"/>`;
+  }
+  const lab = (x, y, t, a = 'start', cls = 't') => `<text x="${f2(x)}" y="${f2(y)}" text-anchor="${a}" font-size="11" class="${cls}">${t}</text>`;
+  s += lab(10, Y(half + P.ringT) + 14, 'outer wall (the strap passes under it)', 'start', 't-ink') + lab(10, Y(-half) + 14, 'inner wall', 'start', 't-ink');
+  s += lab(712, Y(crest) - 6, 'bead crest', 'end') + lab(712, Y(-crest) + 14, 'bead crest', 'end');
+  s += lab(X(0), Y(-0.02) + 4, 'core', 'middle', 'f-bg-t');
+  s += lab(X(BP.arms[0].u1) + 12, Y(P.barbOut) + 4, 'hook', 'start', 't-acc') + lab(X(BP.arms[1].u0) - 12, Y(-P.barbOut) + 4, 'hook', 'end', 't-acc');
+  s += lab(X(0.36), Y(BP.arms[0].o0) + 16, 'spring arm 0.9 mm', 'start', 't-acc') + lab(X(-0.36), Y(BP.arms[1].o1) - 8, 'spring arm', 'end', 't-acc');
+  s += lab(X(0), Y(half + P.ringT + 0.12) - 6, 'strap', 'middle', 't-acc');
+  $('#p-plan').innerHTML = s.replace('class="f-bg-t"', 'style="fill:#fff;font-family:var(--font-data)"');
+})();
+(function printHook() {
+  // section through a hook (o across, z up), seated above the outer wall's half bead
+  const sc = 600, ox = -0.08, oz = 0.1;
+  const X = o => (o - ox) * sc, Y = z => (oz - z) * sc;
+  const half = P.slotW / 2, zf = -P.trackH, zs = zf + P.slitH, br = P.beadR;
+  const poly = (pts, cls, extra = '') => `<polygon points="${pts.map(([o, z]) => `${f2(X(o))},${f2(Y(z))}`).join(' ')}" class="${cls}" ${extra}/>`;
+  const A = BP.arms[0], sec = K.barbSection(A.o1, P.barbOut, P);
+  let s = '';
+  s += poly([[ox, 0], [0.6, 0], [0.6, P.wall], [ox, P.wall]], 'f-base s-ink', 'stroke-width="1"');                 // container floor
+  s += poly([[half, zs], [half + P.ringT, zs], [half + P.ringT, 0], [half, 0]], 'f-wall s-ink', 'stroke-width="1"');  // outer wall
+  s += `<path d="M${f2(X(half - br))} ${f2(Y(zs))} A${f2(br * sc)} ${f2(br * sc)} 0 0 1 ${f2(X(half + br))} ${f2(Y(zs))} Z" class="f-wall s-ink" stroke-width="1"/>`;
+  s += `<line x1="0" y1="${f2(Y(zf))}" x2="360" y2="${f2(Y(zf))}" class="s-ax" stroke-width="1"/>`;
+  // the arm while passing the bead, bent in by the engagement (dashed), then seated (solid)
+  const d = P.barbOut - (half - br);
+  s += poly(sec.map(([o, z]) => [o - d, z]).concat([[A.o0 - d, -0.115], [A.o0 - d, -0.02]]), 's-acc', 'fill="none" stroke-width="1" stroke-dasharray="3 3"');
+  s += poly([[A.o0, zf], [A.o1, zf], [A.o1, -0.02], [A.o0, -0.02]], 'f-acc');
+  s += poly(sec, 'f-acc');
+  const lab = (x, y, t, a = 'start', cls = 't') => `<text x="${f2(x)}" y="${f2(y)}" text-anchor="${a}" font-size="10.5" class="${cls}">${t}</text>`;
+  const lead = (x1, y1, x2, y2) => `<line x1="${f2(x1)}" y1="${f2(y1)}" x2="${f2(x2)}" y2="${f2(y2)}" class="s-mut" stroke-width=".7"/>`;
+  s += lab(6, Y(P.wall) - 6, 'container floor', 'start', 't-ink');
+  s += lead(X(0.21), Y(-0.054), X(0.06), Y(-0.04)) + lab(X(0.06) - 4, Y(-0.04) + 4, '30° lead-in', 'end', 't-acc');
+  s += lead(X(0.2), Y(-0.115), X(0.06), Y(-0.125)) + lab(X(0.06) - 4, Y(-0.125) + 4, '45° release', 'end', 't-acc');
+  s += lead(X(half + 0.02), Y(zs + 0.03), X(0.45), Y(-0.19)) + lab(X(0.45) + 4, Y(-0.19) + 4, 'bead', 'start');
+  s += lead(X(A.o0 - d + 0.005), Y(-0.2), X(0.06), Y(-0.21)) + lab(X(0.06) - 4, Y(-0.21) + 4, 'flexed', 'end', 't-acc');
+  s += lab(X(half + P.ringT / 2), Y(-0.07), 'outer', 'middle', 't-ink') + lab(X(half + P.ringT / 2), Y(-0.07) + 12, 'wall', 'middle', 't-ink');
+  s += lab(X(half + P.ringT / 2), Y(zf) - 6, 'slit', 'middle');
+  $('#p-hook').innerHTML = s;
+})();
+(function printStrain() {
+  const d = (P.barbOut - (P.slotW / 2 - P.beadR)) * 25.4, t = P.armT * 25.4, Lc = (P.armReach - P.strapW / 2) * 25.4;
+  const eps = L => 150 * d * t / (L * L);                     // percent
+  const x0 = 46, x1 = 340, y0 = 262, y1 = 22, Lmin = 3, Lmax = 14, Emax = 8;
+  const X = L => x0 + (L - Lmin) / (Lmax - Lmin) * (x1 - x0), Y = e => y0 - Math.min(e, Emax) / Emax * (y0 - y1);
+  let s = '';
+  for (let e = 0; e <= Emax; e += 2) s += `<line x1="${x0}" y1="${f2(Y(e))}" x2="${x1}" y2="${f2(Y(e))}" class="s-ax" stroke-width=".5" opacity=".6"/><text x="${x0 - 6}" y="${f2(Y(e) + 4)}" text-anchor="end" font-size="10" class="t">${e} %</text>`;
+  for (let L = 4; L <= Lmax; L += 2) s += `<text x="${f2(X(L))}" y="${y0 + 16}" text-anchor="middle" font-size="10" class="t">${L}</text>`;
+  s += `<text x="${(x0 + x1) / 2}" y="${y0 + 32}" text-anchor="middle" font-size="10" class="t">free arm length, mm</text>`;
+  s += `<rect x="${x0}" y="${f2(Y(3))}" width="${x1 - x0}" height="${f2(Y(2) - Y(3))}" class="f-soft" opacity=".7"/><text x="${x1 - 4}" y="${f2(Y(3) - 5)}" text-anchor="end" font-size="10" class="t">rule-of-thumb limit for PLA, 2–3 %</text>`;
+  const pts = []; for (let L = Lmin; L <= Lmax + 1e-9; L += 0.1) pts.push(`${f2(X(L))},${f2(Y(eps(L)))}`);
+  s += `<polyline points="${pts.join(' ')}" class="s-acc" stroke-width="2"/>`;
+  const Lv = (P.trackH - 0.11) * 25.4;                         // an arm standing up inside the track's height
+  s += `<circle cx="${f2(X(Lv))}" cy="${f2(Y(eps(Lv)))}" r="4" class="f-bg s-acc" stroke-width="2"/><text x="${f2(X(Lv) + 8)}" y="${f2(Y(eps(Lv)) + 4)}" font-size="10" class="t">standing arm, ${Lv.toFixed(1)} mm: ${eps(Lv).toFixed(1)} %</text>`;
+  s += `<circle cx="${f2(X(Lc))}" cy="${f2(Y(eps(Lc)))}" r="4.5" class="f-acc"/><line x1="${f2(X(Lc))}" y1="${f2(Y(eps(Lc)) - 6)}" x2="${f2(X(Lc) + 10)}" y2="${f2(Y(4.6) + 4)}" class="s-acc" stroke-width=".8"/><text x="${f2(X(Lc) + 12)}" y="${f2(Y(4.6))}" text-anchor="middle" font-size="10.5" class="t-acc">this arm, ${Lc.toFixed(1)} mm: ${eps(Lc).toFixed(1)} %</text>`;
+  s += `<text x="${x0}" y="12" font-size="10" class="t">ε = 3δt / 2L², δ = ${d.toFixed(2)} mm, t = ${t.toFixed(2)} mm</text>`;
+  $('#p-strain').innerHTML = s;
+})();
+(function print() {
+  // x in inches across the gap between two slanted neighbours: A's base ends at x = 0, B's starts at x = g
+  const D = 0.25, g = 2 * D, sc = 165, x0 = -1.92;
+  const X = x => (x - x0) * sc, Y = z => 150 - z * sc;            // z = 0: underside of both floors
+  const o = 0.45, t = P.ringT, ch = P.slotW, zf = -P.trackH, zs = zf + P.slitH, br = P.beadR, w = P.wall, top = 0.42;
+  const R = BP.coreR, Ht = P.trackH - P.btnTopTol, T = P.slitH - P.strapTol;
+  const rect = (xa, xb, za, zb, cls) => `<rect x="${f2(X(Math.min(xa, xb)))}" y="${f2(Y(Math.max(za, zb)))}" width="${f2(Math.abs(xb - xa) * sc)}" height="${f2(Math.abs(zb - za) * sc)}" class="${cls}" stroke-width="1"/>`;
+  let s = `<line x1="0" y1="${Y(zf)}" x2="720" y2="${Y(zf)}" class="s-ax" stroke-width="1"/><text x="6" y="${Y(zf) + 14}" font-size="10" class="t">drawer floor</text>`;
+  s += `<polygon points="${f2(X(x0))},${f2(Y(w))} ${f2(X(-w * 0.7))},${f2(Y(w))} ${f2(X(D * top / 3))},${f2(Y(top))} ${f2(X(D * top / 3 + w * 1.1))},${f2(Y(top))} ${f2(X(0))},${f2(Y(0))} ${f2(X(x0))},${f2(Y(0))}" class="f-dome s-ink" stroke-width="1" stroke-linejoin="round"/>`;
+  const xe = g - D * top / 3;
+  s += `<polygon points="${f2(X(-x0 + g))},${f2(Y(w))} ${f2(X(g + w * 0.7))},${f2(Y(w))} ${f2(X(xe))},${f2(Y(top))} ${f2(X(xe - w * 1.1))},${f2(Y(top))} ${f2(X(g))},${f2(Y(0))} ${f2(X(-x0 + g))},${f2(Y(0))}" class="f-base s-ink" stroke-width="1" stroke-linejoin="round"/>`;
+  const A = j => -j, B = j => g + j;
+  for (const side of [A, B]) {
+    s += rect(side(o), side(o + t), zs, 0, 'f-wall s-ink');
+    s += rect(side(o + t + ch), side(o + 2 * t + ch), zf, 0, 'f-wall s-ink');
+    const xo = side(o + t), xi = side(o + t + ch);
+    s += `<circle cx="${f2(X(xi))}" cy="${f2(Y(zs))}" r="${f2(br * sc)}" class="f-wall s-ink" stroke-width="1"/>`;
+    s += `<path d="M${f2(X(xo) - br * sc)} ${f2(Y(zs))} a${f2(br * sc)} ${f2(br * sc)} 0 0 1 ${f2(2 * br * sc)} 0z" class="f-wall s-ink" stroke-width="1"/>`;
+  }
+  const ca = A(o + t + ch / 2), cb = B(o + t + ch / 2);
+  s += rect(ca, cb, zf, zf + T, 'f-acc');
+  const fr = Math.min(P.btnFillet, R * 0.7, Ht * 0.6) * sc;   // the core's rounded top
+  for (const c of [ca, cb]) { const l = X(c - R), r = X(c + R), b = Y(zf), tp = Y(zf + Ht);
+    s += `<path d="M${f2(l)} ${f2(b)} L${f2(l)} ${f2(tp + fr)} A${f2(fr)} ${f2(fr)} 0 0 1 ${f2(l + fr)} ${f2(tp)} L${f2(r - fr)} ${f2(tp)} A${f2(fr)} ${f2(fr)} 0 0 1 ${f2(r)} ${f2(tp + fr)} L${f2(r)} ${f2(b)} Z" class="f-acc"/>`; }
+  const lab = (x, y, txt, anchor = 'middle', cls = 't') => `<text x="${f2(x)}" y="${f2(y)}" text-anchor="${anchor}" font-size="11" class="${cls}">${txt}</text>`;
+  const lead = (x1, y1, x2, y2) => `<line x1="${f2(x1)}" y1="${f2(y1)}" x2="${f2(x2)}" y2="${f2(y2)}" class="s-mut" stroke-width=".7"/>`;
+  s += lab(8, 22, 'container A · slanted wall', 'start', 't-ink') + lab(712, 22, 'container B · slanted wall', 'end', 't-ink');
+  s += lead(X(A(o + t + ch)), Y(zs) - 4, X(A(o + t + ch)) - 18, 62) + lab(X(A(o + t + ch)) - 22, 58, 'bead r 0.05', 'end');
+  s += lead(X(A(o + t / 2)), Y(-0.04), X(A(o + t / 2)) + 10, 62) + lab(X(A(o + t / 2)) + 14, 58, 'outer wall, slit below', 'start');
+  s += lead(X(cb), Y(zf + Ht), X(cb) + 8, 62) + lab(714, 58, 'core ⌀ 0.38, rounded top', 'end');
+  s += lead(X((ca + cb) / 2), Y(zf + T / 2), X((ca + cb) / 2), 224) + lab(X((ca + cb) / 2), 240, 'strap 0.098 in · slit 0.1 in');
+  s += lead(X(A(o + 1.5 * t + ch)), Y(-0.2), X(A(o + 1.5 * t + ch)), 224) + lab(8, 240, 'inner wall = foot', 'start');
+  s += lab(X(g / 2), Y(0.16), '2 × slant', 'middle', 't-acc');
+  $('#p-sec').innerHTML = s;
+})();
+
+// ===================================================================== OUTPUTS
+(function outputs() {
+  const b = LAYOUT[0], r = K.planToWorldRect(b, CTX), L = K.loopOf(b, CTX);
+  const lab = K.placeContainerLabel(b, CTX, K.shapeOf(b, CTX), { label: b.label, name: b.name });
+  const r4 = v => Math.round(v * 10000) / 10000;
+  const j = { id: b.label, name: b.name, type: b.type, walls: 'straight', draft: 0, blend: b.blend, bowlDepth: b.bowl,
+    rim: { x: r4(r.x0), y: r4(r.y0), width: b.w, depth: b.d },
+    trackInsets: { outerWall: r4(L.j.outer), channelOuter: r4(L.j.chanOut), centreLine: r4(L.j.centre), channelInner: r4(L.j.chanIn), innerWall: r4(L.j.inner) },
+    label: { text: lab.text, capHeight: r4(lab.cap), centre: [r4(lab.centre[0]), r4(lab.centre[1])], angle: lab.angle } };
+  $('#o-json').textContent = JSON.stringify(j, null, 2);
+  const { conns } = connectorsFor(LAYOUT);
+  const kind = b => b.type === 'dome' ? (b.slant ? 'dome-slanted' : 'dome') : (b.slant ? 'slanted' : 'straight');
+  const files = LAYOUT.map(b => [`${b.label}-${b.name.toLowerCase()}-${kind(b)}-${b.w}inx${b.d}in.stl`, 'container']).concat(conns.map((c, i) => [`K0${i + 1}-${c.A.label}-${c.B.label}-${fmt(c.len)}in.stl`, 'connector']));
+  $('#o-files').innerHTML = files.slice(0, 11).map(([f, k]) => `<li>${f}<span>${k}</span></li>`).join('') + (files.length > 11 ? `<li>… and ${files.length - 11} more<span></span></li>` : '') + '<li>plan.pdf · layout.json · parts.txt<span>docs</span></li>';
+})();
+})();
+</script>
+</body>
+</html>
