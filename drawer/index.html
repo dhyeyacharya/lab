@@ -342,7 +342,7 @@ footer a:hover { color: var(--accent); }
     <div class="cap">
       <span class="num">05 · Label</span>
       <h2 id="h5s">Letters cut into a watertight mesh</h2>
-      <p>Every part is debossed 0.5 mm deep with its tag and nothing else: <b>C01</b> under a container, <b>K03</b> under a connector strap. Names stay on the plan and in the file names, where they can change without reprinting. The letters come from IBM Plex Mono Bold, stored as polygons, and are mirrored so they read with the part turned over.</p>
+      <p>Every part is debossed 0.5 mm deep with its tag: <b>C01</b> under a container, and <b>K03 C02-C06</b> under a connector strap, which names the two containers it joins. Names such as COINS stay on the plan and in the file names, where they can change without reprinting. The letters come from IBM Plex Mono Bold, stored as polygons, and are mirrored so they read with the part turned over.</p>
       <p>Cutting text into a mesh without a CAD kernel is a geometry problem. The underside face becomes a polygon with a hole for every letter; it is split into triangles by <b>ear clipping</b> with hole bridging (earcut), each letter gets a ceiling 0.5 mm up, and walls join the two. A letter's counters, the inside of an O or an A, stay at the surface as islands.</p>
       <p class="how">A mesh only prints if it is closed: every edge shared by exactly two faces, in opposite directions. Letters that share a baseline put many vertices on one exact line, which can trip the triangulator, so each vertex is moved by a few millionths of an inch first. 700 random labels in the test suite all come out closed.</p>
     </div>
@@ -1769,7 +1769,7 @@ function connectorsFor(boxes) {
     `<rect x="${X(-fw / 2)}" y="${Y(fh / 2)}" width="${fw * sc}" height="${fh * sc}" fill="none" class="s-ink" stroke-width="1.2"/>`;
   $('#l-count').textContent = `${nf} face · ${np} pocket triangles`;
   // a whole connector strap with its label: check it is closed
-  const con = K.buildConnector([0, 0], [2.6, 0], CTX, 32, { label: 'K03' });
+  const con = K.buildConnector([0, 0], [2.6, 0], CTX, 32, { label: 'K03', extra: 'C02-C06' });
   let tris = 0, open = 0;
   for (const sh of con.shells) {
     const E = new Map();

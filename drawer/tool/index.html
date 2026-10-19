@@ -2784,7 +2784,7 @@ function build3D() {
     }
   }
   if (!design) for (const v of connViews()) {
-    const con = K.buildConnector(v.pts[0], v.pts[1], c, 18, S.step === 'export' ? { label: v.label } : null, { oa: v.pr.geo.oa, ob: v.pr.geo.ob });
+    const con = K.buildConnector(v.pts[0], v.pts[1], c, 18, S.step === 'export' ? { label: v.label, extra: `${v.pr.A.label}-${v.pr.B.label}` } : null, { oa: v.pr.geo.oa, ob: v.pr.geo.ob });
     grp.add(new THREE.Mesh(geomFromShells(con.shells), v.cn.uid === S.csel ? T3.mat.connSel : T3.mat.conn));
   }
 }
@@ -2799,7 +2799,7 @@ function parts() {
     const nm = nameOf(b), sl = slug(nm);
     return { kind: 'container', label: b.label, b, name: nm, file: `${b.label}${sl ? '-' + sl : ''}-${typeWord(b)}-${fileLen(b.w)}x${fileLen(b.d)}.stl`, type: typeText(b), size: dimsTxt(b.w, b.d), text: { label: b.label } };
   });
-  const cons = connViews().map(v => ({ kind: 'connector', label: v.label, v, name: '', file: `${v.label}-${v.pr.A.label}-${v.pr.B.label}-${fileLen(v.len)}.stl`, type: `${v.pr.A.label} ↔ ${v.pr.B.label}`, size: len(v.len), text: { label: v.label } }));
+  const cons = connViews().map(v => ({ kind: 'connector', label: v.label, v, name: '', file: `${v.label}-${v.pr.A.label}-${v.pr.B.label}-${fileLen(v.len)}.stl`, type: `${v.pr.A.label} ↔ ${v.pr.B.label}`, size: len(v.len), text: { label: v.label, extra: `${v.pr.A.label}-${v.pr.B.label}` } }));
   return conts.concat(cons);
 }
 function stlOf(part) {
@@ -2847,7 +2847,7 @@ function layoutJSON() {
     }),
     connectors: connViews().map(v => {
       const [ha, hb] = handsOf(v), oa = v.pr.geo.oa, ob = v.pr.geo.ob;
-      const lab = K.buildConnector(v.pts[0], v.pts[1], c, 6, { label: v.label }, { oa: v.pr.geo.oa, ob: v.pr.geo.ob }).label;
+      const lab = K.buildConnector(v.pts[0], v.pts[1], c, 6, { label: v.label, extra: `${v.pr.A.label}-${v.pr.B.label}` }, { oa: v.pr.geo.oa, ob: v.pr.geo.ob }).label;
       return { id: v.label, between: [v.pr.A.label, v.pr.B.label], sides: [v.pr.sa, v.pr.sb], buttonA: pt(v.pts[0]), buttonB: pt(v.pts[1]), outwardA: oa, outwardB: ob, outerArmA: [-oa[1] * ha, oa[0] * ha], outerArmB: [-ob[1] * hb, ob[0] * hb], length: r4(v.len), straight: v.pr.geo.straight,
         label: lab ? { text: lab.text, capHeight: r4(lab.cap), centre: pt(lab.centre), angle: Math.round(lab.angle * 100) / 100 } : null };
     }),
