@@ -313,7 +313,7 @@ footer a:hover { color: var(--accent); }
         <p class="stats" id="c-stats"></p>
         <p class="formula">z(s) = z<sub>E</sub> − b · Q(s/2) / Q(½), &nbsp;Q = Bernstein degree 5, c = [0, F, 1, 1, F, 0], F = 1.8</p>
       </div>
-      <figure class="photo"><img src="under.jpg" width="2000" height="1333" loading="lazy" alt="A pale blue Dome container turned over, rim down as it prints, showing the closed track loop on its underside and its tag C01 debossed in the middle; behind it an upright slanted Standard container, in front a cobalt snap-fit connector"><figcaption class="key" style="margin-top:8px">As it prints: rim down, so the track and the debossed label come out on top. A connector lies in front, strap down.</figcaption></figure>
+      <figure class="photo"><img src="under.jpg" width="2000" height="1333" loading="lazy" alt="A pale blue Dome container turned over, rim down as it prints, showing the closed track loop on its underside and its tag C01 debossed in the middle; behind it an upright slanted Standard container, in front a cobalt connector with its two slotted snap buttons"><figcaption class="key" style="margin-top:8px">As it prints: rim down, so the track and the debossed label come out on top. A connector lies in front, strap down.</figcaption></figure>
     </div>
   </section>
 
@@ -324,7 +324,7 @@ footer a:hover { color: var(--accent); }
       <h2 id="h4s">A graph of neighbours, joined on the shortest line</h2>
       <p>Containers with straight walls sit flush and hold each other in place. Slanted walls leave a gap between bases, so those neighbours need joining. The tool builds an <b>adjacency graph</b> from the rims: two containers are neighbours when they share at least 0.75 in of edge, and an edge needs a connector when either side is slanted.</p>
       <p>Under every base runs one closed <b>track</b>: an outer wall, a 0.5 in channel and an inner wall, each an inward offset of the base outline. A connector is two snap buttons and a strap. Its buttons sit on the <b>shortest line</b> between the two facing channels: straight across the overlap of the two sides when they share one, otherwise diagonally between their nearest ends.</p>
-      <p class="how">Rules on the graph: every side that meets a neighbour keeps at least one connector, two buttons on one side stay 1.25 in apart (room for their spring arms), and a button stays 0.6 in clear of a corner, and a strap may pass under any outer wall (the slit runs all the way round) but never into a third container's inner wall.</p>
+      <p class="how">Rules on the graph: every side that meets a neighbour keeps at least one connector, two buttons on one side stay 0.75 in apart, a button stays 0.35 in clear of a corner, and a strap may pass under any outer wall (the slit runs all the way round) but never into a third container's inner wall.</p>
     </div>
     <div class="vis">
       <div class="card">
@@ -361,23 +361,23 @@ footer a:hover { color: var(--accent); }
       <span class="num">06 · Print</span>
       <h2 id="h6s">A snap fit, not a wedge</h2>
       <p>Each part leaves as a binary STL in millimetres, named by number, name and size. Containers print <b>rim-down</b>: the open top sits on the bed and the underside, with its track and label, is printed last as a crisp top surface. Standard containers need no supports; a Dome needs a little under the flat middle of its bowl.</p>
-      <p>A connector has to click in, not be forced in. Its button has a <b>core</b> with a rounded top that finds its own way into the channel, then slides between the track's beads with 0.01 in to spare, so it never binds. Two <b>spring arms</b>, 0.9 mm thick, run along the channel from the core, one toward each wall, and end in small <b>hooks</b>. Pressing a container onto the button, the bead rides down each hook's 30° lead-in and pushes the arm in by 0.64 mm; past the bead, the arm springs back and the hook sits above it.</p>
-      <p class="how">The arm is a cantilever: for a bending deflection <i>δ</i>, the peak strain is <i>ε = 3δt / 2L²</i>. With <i>t</i> = 0.9 mm and a free length <i>L</i> = 9.7 mm, the snap strains the plastic about 0.9 %, well inside what PLA and PETG take repeatedly. The arms run along the channel rather than standing up, so they are long even though the track is only a quarter inch tall; they print standing free on the bed, so nothing ties them down.</p>
+      <p>A connector has to click in, not be forced in. Each button is a <b>slotted ring</b>, 0.38 in across with a rounded top, so it finds its own way into the channel and clears both bead crests by 0.01 in. One slot, facing the inner wall, turns the ring into two curved <b>spring arms</b>, held only where the strap's narrow <b>neck</b> runs under them. On the inner side a small <b>lip</b> reaches 0.02 in past the bead: pressing in, the bead rides down its 30° lead-in and squeezes the ring 0.5 mm narrower; past the bead it springs back and the lip sits on top. A domed <b>post</b> in the middle stops the arms before they bend too far.</p>
+      <p class="how">Each arm is a curved cantilever of radius <i>R</i> swept through <i>α</i>. Pushed in by <i>δ</i> at its tip, it peaks at <i>ε = δt / 2R²k</i>, with <i>k = α/2 − sin 2α/4</i>. The arms run 138° round the ring, so a 0.5 mm click strains the plastic about 0.8 %. Four fingers standing up would be only 3 mm tall in a quarter-inch track, and would strain 6.7 % for the same click: that is why the slot runs round, not down.</p>
     </div>
     <div class="vis">
       <div class="card">
         <div class="card-hd"><h3>One button in its channel, from above</h3><span class="lab">to scale · 1 in = 330 px</span></div>
-        <svg id="p-plan" viewBox="0 0 720 360" role="img" aria-label="Plan view of a snap button in its track channel: the core between the bead crests, two spring arms along the channel with hooks reaching past the beads, and the strap leaving under the outer wall"></svg>
-        <p class="key">The hooks reach 0.025 in past the bead crests (dashed). Pressing in, each arm bends toward the core; once past, it springs back and the hook rests on top of the bead.</p>
+        <svg id="p-plan" viewBox="0 0 720 360" role="img" aria-label="Plan view of a slotted snap button in its track channel: a ring with one slot facing the inner wall, its lip reaching past the inner bead crest, a domed post in the middle, and the strap's neck holding the ring on the outer side"></svg>
+        <p class="key">The lip reaches 0.02 in past the inner bead crest (dashed). Pressing in, both arms bend toward the post; once past, they spring back and the lip rests on top of the bead. The outer side only clears its crest, so the strap can leave there.</p>
       </div>
       <div class="duo">
         <div class="card">
-          <div class="card-hd"><h3>Section through a hook</h3></div>
-          <svg id="p-hook" viewBox="0 0 360 300" role="img" aria-label="Section through the spring arm's hook seated above the outer wall's bead, with the arm's flexed position while passing shown dashed"></svg>
+          <div class="card-hd"><h3>Section through the lip</h3></div>
+          <svg id="p-hook" viewBox="0 0 360 300" role="img" aria-label="Section through the ring's lip seated above the inner wall's bead, with the ring's squeezed position while passing shown dashed and the post that stops it"></svg>
         </div>
         <div class="card">
-          <div class="card-hd"><h3>Snap strain by arm length</h3></div>
-          <svg id="p-strain" viewBox="0 0 360 300" role="img" aria-label="Peak strain of the spring arm against its free length for a 0.64 mm snap: about 0.9 % at the chosen 9.7 mm, far above the PLA limit if the arm were as short as the track is tall"></svg>
+          <div class="card-hd"><h3>Snap strain by arm sweep</h3></div>
+          <svg id="p-strain" viewBox="0 0 360 300" role="img" aria-label="Peak strain of one curved arm against how far it sweeps round the ring for a 0.5 mm click: about 0.8 % at the chosen 138 degrees, rising steeply for short arms"></svg>
         </div>
       </div>
       <div class="card">
@@ -388,11 +388,11 @@ footer a:hover { color: var(--accent); }
         <table class="tbl">
           <thead><tr><th>Feature</th><th>Value</th><th>Why</th></tr></thead>
           <tbody>
-            <tr><td>Core vs bead crests</td><td class="n">⌀ 0.38 / 0.40 in</td><td>0.01 in each side: the button slides along the channel and never wedges.</td></tr>
-            <tr><td>Spring arm</td><td class="n">0.9 × 9.7 mm</td><td>Bends 0.64 mm to pass the bead at about 0.9 % strain.</td></tr>
-            <tr><td>Hook</td><td class="n">0.025 in past the bead</td><td>30° lead-in on top cams the arm in; a 45° face below lets the part be pulled off again.</td></tr>
-            <tr><td>Seated play</td><td class="n">0.01 in</td><td>The hook sits just clear of the bead, so nothing is preloaded.</td></tr>
-            <tr><td>Arm direction</td><td class="n">away from the strap</td><td>The outer arm points away from the way a diagonal strap leans, so the strap never runs along it.</td></tr>
+            <tr><td>Ring vs bead crests</td><td class="n">⌀ 0.38 / 0.40 in</td><td>0.01 in each side: the button slides along the channel and never wedges.</td></tr>
+            <tr><td>Ring wall · slot</td><td class="n">0.9 mm · 1 mm</td><td>Two perimeters at a 0.4 mm nozzle; one slot facing the inner wall makes two arms of 138°.</td></tr>
+            <tr><td>Lip</td><td class="n">0.02 in past the bead</td><td>30° lead-in on top squeezes the ring in; a 45° face below lets the part be pulled off again.</td></tr>
+            <tr><td>Strap neck</td><td class="n">0.2 in</td><td>Holds the ring across 72° only, so the arms stay free; a strap leaning 45° still leaves arms of 93° at 1.4 %.</td></tr>
+            <tr><td>Post</td><td class="n">⌀ 0.24 in</td><td>Stops the arms at 0.035 in, so a hard push can't overstrain them.</td></tr>
             <tr><td>Strap vs slit</td><td class="n">0.098 / 0.1 in</td><td>0.002 in less than the slit, so it passes under the outer wall.</td></tr>
             <tr><td>Snap bead</td><td class="n">r 0.05 in</td><td>Whole on the inner wall, upper half on the outer wall over the slit.</td></tr>
             <tr><td>Wall and floor</td><td class="n">1.5 mm · 0.8–3</td><td>One slider for every container. 1.5 mm is three or four perimeters at a 0.4 mm nozzle: stiff, light, quick.</td></tr>
@@ -419,7 +419,7 @@ footer a:hover { color: var(--accent); }
         <div class="g"><b><small>A</small>Read</b><p><code>File Path</code> → <code>Read File</code> → <code>Python 3 Script</code> unpacks base planes, sizes, draft, blend, bowl and track offsets from layout.json; <code>Graft</code> puts each container on branch {i}.</p></div>
         <div class="g"><b><small>B</small>Body</b><p><code>Rectangle</code> (radius = blend) → <code>Move</code> up → <code>Offset</code> by the draft → <code>Loft</code> → <code>Cap Holes</code> → <code>Fillet Edge</code> on the bottom edges. Standard: <code>Shell</code> 1.5 mm. Dome: loft the bowl's sections from the Bézier curve and <code>Solid Difference</code> the cavity; <code>Stream Filter</code> picks per branch.</p></div>
         <div class="g"><b><small>C</small>Tracks</b><p>Four inward <code>Offset</code> curves of the base → <code>Boundary Surfaces</code> → <code>Extrude</code> → <code>Solid Difference</code> with the body so the walls meet its underside; <code>Pipe</code> the beads, cut the slit all the way round, <code>Solid Union</code> with the body.</p></div>
-        <div class="g"><b><small>D</small>Connectors</b><p>At each point a <code>Cylinder</code> core, two arm <code>Box</code>es oriented along the channel, and hooks as an <code>Extrude</code>d section; strap as <code>Rectangle 3Pt</code> → <code>Extrude</code> → <code>Solid Union</code>. Without the app, <code>Curve Proximity</code> between two facing centre lines finds the same shortest line.</p></div>
+        <div class="g"><b><small>D</small>Connectors</b><p>At each point the ring section and the lip section <code>Revolve</code>d through 352°, blended over the lip's 100°, plus a domed post; strap as a necked <code>Polyline</code> → <code>Extrude</code> → <code>Solid Union</code>. Without the app, <code>Curve Proximity</code> between two facing centre lines finds the same shortest line.</p></div>
         <div class="g"><b><small>E</small>Labels</b><p><code>Curve.CreateTextOutlines</code> in a Python component, mirrored and placed from the label's centre and angle → <code>Boundary Surfaces</code> → <code>Extrude</code> 0.5 mm → <code>Solid Difference</code>.</p></div>
         <div class="g"><b><small>F</small>Export</b><p>Centre each part at the origin, <code>Scale</code> by 25.4 (the model is in inches, slicers read millimetres), bake with names, one STL per part.</p></div>
       </div>
@@ -447,7 +447,7 @@ footer a:hover { color: var(--accent); }
       <li><b>Offset profiles</b><p>Each container is a sweep of rounded-rectangle rings along its wall profile; the inner surface is that profile offset by the wall thickness.</p></li>
       <li><b>Bézier bowl</b><p>The degree-5 Bernstein curve from Project 01, halved, normalised and inverted; sections crowd where it is steepest.</p></li>
       <li><b>Adjacency and shortest lines</b><p>Shared rim edges form the neighbour graph; connector points come from the overlap of facing channel centre lines, or their nearest ends.</p></li>
-      <li><b>Cantilever snap fit</b><p>Spring arms sized by ε = 3δt / 2L²: long and thin along the channel, so a 0.64 mm snap stays under 1 % strain.</p></li>
+      <li><b>Curved cantilever snap fit</b><p>A slotted ring whose two arms sweep 138°, sized by ε = δt / 2R²k: a 0.5 mm click stays under 1 % strain.</p></li>
       <li><b>Text to triangles</b><p>Font outlines as polygons, mirrored, triangulated by earcut with holes, then closed into pockets and checked edge by edge.</p></li>
       <li><b>Binary STL and vector PDF</b><p>Both written in the browser with no libraries: STL triangles scaled to millimetres, and a two-sheet PDF in Helvetica at a printed scale.</p></li>
       <li><b>Grasshopper per container</b><p>The same rules as data trees: one branch per container, geometry picked by position rather than index, layout.json as the shared source.</p></li>
@@ -514,21 +514,21 @@ const K = (() => {
     beadR: 0.05,            // ghx: pipe radius (snap bead)
     slitH: 0.10,            // ghx: HEIGHT OF THE SLIT AND SNAP PIPE
     btnTopTol: 0.01,        // ghx: Tolerance on top of the button
-    btnFillet: 0.12,        // round on the button core's top edge (3 mm): guides the core into the bead throat
     strapTol: 0.002,        // ghx: strap thickness = slit height - this
-    // snap-fit button: a core that slides between the beads, and two spring arms whose hooks
-    // flex past the beads and catch above them
-    coreClear: 0.01,        // core radius = channel half-width - bead protrusion - this
-    armT: 0.035,            // spring arm thickness (0.9 mm), flexes sideways
-    armReach: 0.55,         // arm tip, along the channel from the button centre
-    armOut: 0.165,          // arm's outer face, across the channel from the centre
-    barbOut: 0.225,         // hook tip across the channel: 0.025 in past the bead crest
-    barbLen: 0.08,          // hook length along the channel
-    strapW: 0.34,           // strap width (narrower than the core)
+    // slotted snap button: a ring with one slot, clicking over the inner wall's bead
+    coreClear: 0.01,        // ring radius = channel half-width - bead protrusion - this (0.19)
+    btnWall: 0.035,         // ring wall (0.9 mm, two perimeters): the two arms that flex
+    btnGap: 0.04,           // the slot, facing the inner wall (1 mm)
+    lipOut: 0.22,           // lip radius on the inner side: 0.02 in past the bead crest
+    lipSpan: 50,            // lip half-angle around the slot side, degrees
+    postR: 0.12,            // domed post in the middle; stops the arms bending more than 0.035 in
+    postH: 0.2,             // post height above the drawer floor
+    neckW: 0.2,             // strap width where it runs under the ring (holds the ring there only)
+    strapW: 0.34,           // strap width between the rings
     domeF: 1.8,             // texture study dome: crown fullness
     minBase: 2.3,           // smallest base that still fits the track loop
-    loopEnd: 0.6,           // button centres stay this far from a loop corner (its arms reach 0.55)
-    connGap: 1.25,          // minimum spacing of two button centres on one side
+    loopEnd: 0.35,          // button centres stay this far from a loop corner (centre line)
+    connGap: 0.75,          // minimum spacing of two button centres on one side
     minShared: 0.75,        // shared rim length below which two containers are not neighbors
     labelDepth: 0.5 * MM,   // debossed label depth
     labelMinCap: 0.09,      // smallest letters worth printing (about 2.3 mm)
@@ -1288,100 +1288,105 @@ const K = (() => {
   }
 
   // -------------------------------------------------------------- connector
-  // Snap-fit button, in its local frame: u along the channel, o across it toward the outer wall
-  // (the side the strap leaves by). A core slides between the bead crests with clearance; two
-  // spring arms run along the channel, one toward each wall, and end in hooks that flex past the
-  // beads and catch above them.
-  // hand +1: the outer arm (sign 1, toward the outer wall) runs toward +u; hand -1 mirrors it to -u
-  function buttonParts(P = DEF, hand = 1) {
-    const rc = P.slotW / 2 - P.beadR - P.coreClear;          // 0.19
-    const a0 = P.armOut - P.armT;
-    const arms = [
-      { u0: 0, u1: P.armReach, o0: a0, o1: P.armOut, barb: [P.armReach - P.barbLen, P.armReach], sign: 1 },
-      { u0: -P.armReach, u1: 0, o0: -P.armOut, o1: -a0, barb: [-P.armReach, -P.armReach + P.barbLen], sign: -1 },
-    ];
-    if (hand < 0) for (const A of arms) { [A.u0, A.u1] = [-A.u1, -A.u0]; A.barb = [-A.barb[1], -A.barb[0]]; }
-    return { coreR: rc, hand: hand < 0 ? -1 : 1, arms };
+  // Slotted snap button, in its local frame: o across the channel toward the outer wall (the side
+  // the strap leaves by), u along it, theta measured from +o toward +u. The button is a round ring
+  // with one slot facing the inner wall, so it is two curved spring arms anchored where the strap
+  // neck joins it. A lip on the inner side clicks over the inner wall's bead; a domed post in the
+  // middle stops the arms from bending too far.
+  function buttonParts(P = DEF) {
+    const ro = P.slotW / 2 - P.beadR - P.coreClear;            // 0.19: clears both bead crests
+    const ri = ro - P.btnWall;                                 // 0.155
+    const gap = P.btnGap / (ro - P.btnWall / 2);               // slot, as an angle
+    const anchor = Math.asin(Math.min(0.99, (P.neckW / 2) / (ro - P.btnWall / 2)));   // where the neck holds the ring
+    return { ro, ri, rm: ro - P.btnWall / 2, gap, anchor, lipR: P.lipOut, lipSpan: P.lipSpan * Math.PI / 180, postR: P.postR,
+      armAngle: Math.PI - gap / 2 - anchor };                  // free angle of each arm, from the neck to the slot
   }
-  // The outer arm crosses the strap's path where the strap leaves the core. Point it away from the
-  // way the strap leans along the channel, so the strap never stiffens more than its straight-case root.
-  // o: the button's outward normal; d: unit direction from this button toward the other one.
-  function handOf(o, d) {
-    const lean = d[0] * -o[1] + d[1] * o[0];
-    return lean > 1e-6 ? -1 : 1;
+  // Peak strain of one arm, a curved cantilever of radius rm swept through alpha, pushed in by d
+  function armStrain(alpha, d, t, rm) {
+    const k = alpha / 2 - Math.sin(2 * alpha) / 4, m = alpha >= Math.PI / 2 ? 1 : Math.sin(alpha);
+    return d * t * m / (2 * rm * rm * k);
+  }
+  // radial lip height at angle th (1 inside the lip span, easing to 0 over 12 degrees)
+  function lipAt(th, bp) {
+    let d = Math.abs(((th - Math.PI) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI);   // angle from the slot side
+    const ease = 12 * Math.PI / 180;
+    if (d <= bp.lipSpan) return 1;
+    if (d >= bp.lipSpan + ease) return 0;
+    const s = (d - bp.lipSpan) / ease; return 1 - s * s * (3 - 2 * s);
+  }
+  // Ring wall section (r, z) at a lip weight w in [0, 1]; same point count for every w
+  function ringSection(w, P = DEF) {
+    const bp = buttonParts(P), z0 = -P.trackH, zt = z0 + P.trackH - P.btnTopTol, ro = bp.ro, ri = bp.ri;
+    const rl = ro + (bp.lipR - ro) * w;                         // lip reach
+    const f = Math.min(0.025, P.btnWall - 0.004);              // round on the outer top edge
+    // lead-in: 30 degrees from the insertion direction, from the full lip back to the wall
+    const zl = Math.min(zt - f - 0.005, -0.09 + (bp.lipR - ro) / Math.tan(30 * Math.PI / 180));
+    const pts = [[ri, z0], [ro, z0], [ro, -0.13], [rl, -0.10], [rl, -0.09], [ro, zl]];
+    for (let j = 0; j <= 4; j++) { const a = Math.PI / 2 * j / 4; pts.push([ro - f + f * Math.cos(a), zt - f + f * Math.sin(a)]); }
+    pts.push([ri, zt]);
+    return pts;
   }
   // Plan footprint of one button at c with outward normal o (world): polygons [[x, y], ...]
-  function buttonFootprint(c, o, P = DEF, hand = 1) {
-    const bp = buttonParts(P, hand), u = [-o[1], o[0]];
-    const W = (uu, oo) => [c[0] + u[0] * uu + o[0] * oo, c[1] + u[1] * uu + o[1] * oo];
-    const polys = [];
-    const core = []; for (let j = 0; j < 32; j++) { const a = 2 * Math.PI * j / 32; core.push([c[0] + bp.coreR * Math.cos(a), c[1] + bp.coreR * Math.sin(a)]); }
-    polys.push(core);
-    for (const A of bp.arms) {
-      polys.push([W(A.u0, A.o0), W(A.u1, A.o0), W(A.u1, A.o1), W(A.u0, A.o1)]);
-      const tip = A.sign * P.barbOut, face = A.sign > 0 ? A.o1 : A.o0;
-      polys.push([W(A.barb[0], face), W(A.barb[1], face), W(A.barb[1], tip), W(A.barb[0], tip)]);
-    }
+  function buttonFootprint(c, o, P = DEF) {
+    const bp = buttonParts(P), u = [-o[1], o[0]];
+    const W = (r, th) => [c[0] + (o[0] * Math.cos(th) + u[0] * Math.sin(th)) * r, c[1] + (o[1] * Math.cos(th) + u[1] * Math.sin(th)) * r];
+    const polys = [], n = 40, t0 = Math.PI + bp.gap / 2, t1 = 3 * Math.PI - bp.gap / 2;
+    const ring = [];
+    for (let j = 0; j <= n; j++) { const th = t0 + (t1 - t0) * j / n; ring.push(W(bp.ro + (bp.lipR - bp.ro) * lipAt(th, bp), th)); }
+    for (let j = n; j >= 0; j--) { const th = t0 + (t1 - t0) * j / n; ring.push(W(bp.ri, th)); }
+    polys.push(ring);
+    const post = []; for (let j = 0; j < 24; j++) post.push(W(bp.postR, 2 * Math.PI * j / 24)); polys.push(post);
     return polys;
   }
-  // Hook section across the channel (o, z), for an arm whose outer face is at `face`, tip at `tip`
-  // Only the outer half of the hook (from the bead crest to the tip) ever touches the bead, so each
-  // face is shaped there: a 30° lead-in on top (from the insertion direction) that cams the arm in,
-  // and a 45° face underneath, parallel to the bead's surface 0.01 in away, that lets it un-snap.
-  function barbSection(face, tip, P = DEF) {
-    const s = Math.sign(tip - face), w = Math.abs(tip - face), at = (e, z) => [face + s * e, z];
-    const zTop = -0.02, zLand = -0.08, zTipLow = -0.09, d45 = 0.04, mid = w / 2;
-    const zLead = zLand + mid / Math.tan(30 * Math.PI / 180);  // 30° lead-in from the tip to the hook's middle
-    return [at(-0.015, zTop), at(0, zTop), at(mid, zLead), at(w, zLand), at(w, zTipLow), at(w - d45, zTipLow - d45), at(0, zTipLow - d45), at(-0.015, zTipLow - d45)];
-  }
+  // Lip section across the channel (o, z), for the side facing the inner wall (o < 0)
+  function lipSection(P = DEF) { return ringSection(1, P).map(([r, z]) => [-r, z]); }
   // ends: { oa, ob } outward normals of the channel sides the two buttons sit in (default: along the strap)
   function buildConnector(pa, pb, ctx, seg = 28, text = null, ends = null) {
     const P = ctx.P, z0 = -P.trackH;
     let ux = pb[0] - pa[0], uy = pb[1] - pa[1]; const L = Math.hypot(ux, uy) || 1; ux /= L; uy /= L;
     const oa = (ends && ends.oa) || [ux, uy], ob = (ends && ends.ob) || [-ux, -uy];
-    const ha = handOf(oa, [ux, uy]), hb = handOf(ob, [-ux, -uy]);
-    const bp = buttonParts(P), Rc = bp.coreR, Ht = P.trackH - P.btnTopTol, zt = z0 + Ht, f = Math.min(P.btnFillet, Rc * 0.7, Ht * 0.6);
-    // core: a short cylinder with a filleted top, clear of the beads all the way up
-    const prof = [[Rc, z0], [Rc, zt - f]];
-    for (let j = 1; j <= 10; j++) { const a = Math.PI / 2 * j / 10; prof.push([Rc - f + f * Math.cos(a), zt - f + f * Math.sin(a)]); }
-    const core = (c) => sweep(prof.map(([r, z]) => { const s = []; for (let j = 0; j < seg; j++) { const a = 2 * Math.PI * j / seg; s.push([c[0] + r * Math.cos(a), c[1] + r * Math.sin(a), z]); } return s; }), false);
-    // a prism: a closed (o, z) section extruded along u from u0 to u1, in the button frame at c
-    const prism = (c, o, u0, u1, sec) => {
-      const u = [-o[1], o[0]];
-      const at = (uu) => sec.map(([oo, zz]) => [c[0] + u[0] * uu + o[0] * oo, c[1] + u[1] * uu + o[1] * oo, zz]);
-      return sweep([at(u0), at(u1)], false);
-    };
-    const button = (c, o, hand) => {
-      const shells = [core(c)];
-      for (const A of buttonParts(P, hand).arms) {
-        shells.push(prism(c, o, A.u0, A.u1, [[A.o0, z0], [A.o1, z0], [A.o1, -0.02], [A.o0, -0.02]]));
-        const face = A.sign > 0 ? A.o1 : A.o0;
-        shells.push(prism(c, o, A.barb[0], A.barb[1], barbSection(face, A.sign * P.barbOut, P)));
+    const bp = buttonParts(P), nSec = Math.max(24, seg * 2);
+    // the slotted ring: its wall section swept round from one side of the slot to the other
+    const ring = (c, o) => {
+      const u = [-o[1], o[0]], t0 = Math.PI + bp.gap / 2, t1 = 3 * Math.PI - bp.gap / 2, secs = [];
+      for (let k = 0; k <= nSec; k++) {
+        const th = t0 + (t1 - t0) * k / nSec, dx = o[0] * Math.cos(th) + u[0] * Math.sin(th), dy = o[1] * Math.cos(th) + u[1] * Math.sin(th);
+        secs.push(ringSection(lipAt(th, bp), P).map(([r, z]) => [c[0] + dx * r, c[1] + dy * r, z]));
       }
-      return shells;
+      return sweep(secs, false);
     };
-    // strap: a flat bar from button centre to button centre, label debossed into its underside
-    const T = P.slitH - P.strapTol, Wh = P.strapW / 2;
+    // the domed post in the middle: an over-travel stop that also makes it read as a button
+    const post = (c) => {
+      const zp = z0 + P.postH, f = Math.min(0.06, bp.postR * 0.6), prof = [[bp.postR, z0], [bp.postR, zp - f]];
+      for (let j = 1; j <= 8; j++) { const a = Math.PI / 2 * j / 8; prof.push([bp.postR - f + f * Math.cos(a), zp - f + f * Math.sin(a)]); }
+      return sweep(prof.map(([r, z]) => { const s = []; for (let j = 0; j < seg; j++) { const a = 2 * Math.PI * j / seg; s.push([c[0] + Math.max(r, 1e-4) * Math.cos(a), c[1] + Math.max(r, 1e-4) * Math.sin(a), z]); } return s; }), false);
+    };
+    // strap: a flat bar between the rings, necked down where it runs under each ring so the ring
+    // is held only across the neck and its arms stay free; label debossed into the underside
+    const T = P.slitH - P.strapTol, Wh = P.strapW / 2, wn = P.neckW / 2, sN = bp.ro + 0.01;
     const nx = -uy, ny = ux;                                   // left of A -> B
-    const cs = [[pa[0] - nx * Wh, pa[1] - ny * Wh], [pb[0] - nx * Wh, pb[1] - ny * Wh], [pb[0] + nx * Wh, pb[1] + ny * Wh], [pa[0] + nx * Wh, pa[1] + ny * Wh]];   // CCW from above
-    const strap = { pos: [], idx: [] };
+    const at = (p, along, side) => [p[0] + ux * along + nx * side, p[1] + uy * along + ny * side];
+    const cs = [at(pa, 0, -wn), at(pa, sN, -wn), at(pa, sN, -Wh), at(pb, -sN, -Wh), at(pb, -sN, -wn), at(pb, 0, -wn),
+      at(pb, 0, wn), at(pb, -sN, wn), at(pb, -sN, Wh), at(pa, sN, Wh), at(pa, sN, wn), at(pa, 0, wn)];   // CCW from above
+    const n = cs.length, strap = { pos: [], idx: [] };
     cs.forEach(p => strap.pos.push(p[0], p[1], z0));
     cs.forEach(p => strap.pos.push(p[0], p[1], z0 + T));
-    strap.idx.push(4, 5, 6, 4, 6, 7);                          // top, facing up
-    for (let j = 0; j < 4; j++) { const k = (j + 1) % 4; strap.idx.push(j, k, 4 + k, j, 4 + k, 4 + j); }
+    const topT = triangulate(cs, []);                          // top, facing up
+    topT.forEach(f => { const A = cs[f[0]], B = cs[f[1]], C = cs[f[2]]; ((B[0] - A[0]) * (C[1] - A[1]) - (B[1] - A[1]) * (C[0] - A[0]) > 0) ? strap.idx.push(n + f[0], n + f[1], n + f[2]) : strap.idx.push(n + f[0], n + f[2], n + f[1]); });
+    for (let j = 0; j < n; j++) { const k = (j + 1) % n; strap.idx.push(j, k, n + k, j, n + k, n + j); }
     let label = null;
     if (text) {
       // read along the strap, left to right, with the strap turned over
       let rx = ux, ry = uy; if (rx < -1e-6 || (Math.abs(rx) < 1e-6 && ry < 0)) { rx = -rx; ry = -ry; }
       const qx = -ry, qy = rx, mx = (pa[0] + pb[0]) / 2, my = (pa[1] + pb[1]) / 2;
       const lab = cleanLabel(text.label), extra = cleanLabel(text.extra);
-      const fit = fitText(extra ? [[[`${lab} ${extra}`]], [[lab]]] : [[[lab]]], L - 2 * Rc - 0.12, 2 * Wh - 0.1, P.connLabelMaxCap, P.labelMinCap);
+      const fit = fitText(extra ? [[[`${lab} ${extra}`]], [[lab]]] : [[[lab]]], L - 2 * sN - 0.12, 2 * Wh - 0.1, P.connLabelMaxCap, P.labelMinCap);
       if (fit && !fit.rot) {
         label = { text: fit.lines.join(' '), cap: fit.cap, centre: [mx, my], angle: Math.atan2(ry, rx) * 180 / Math.PI, groups: orientGroups(fit.groups.map(g => g.map(c => c.map(([X, Y]) => [mx + X * rx - Y * qx, my + X * ry - Y * qy])))) };
       }
     }
-    faceWithPockets(strap, [0, 1, 2, 3], z0, label ? label.groups : [], P.labelDepth);
-    return { shells: [...button(pa, oa, ha), ...button(pb, ob, hb), orientOut(strap)], length: L, label, hands: [ha, hb] };
+    faceWithPockets(strap, [...Array(n).keys()], z0, label ? label.groups : [], P.labelDepth);
+    return { shells: [ring(pa, oa), post(pa), ring(pb, ob), post(pb), orientOut(strap)], length: L, label };
   }
 
   // ---------------------------------------------------------- neighbors etc.
@@ -1486,7 +1491,7 @@ const K = (() => {
   return {
     MM, COINS, DEF, squareToQuad, applyH, invert3, orderQuad, floorFromCoin, fitAxisEllipse, robustEllipse, findRim, findRimByColor,
     overlaps, cap, generate, STYLES, mulberry, draftOf, blendOf, bowlOf, trackOffset, domeQ, bowlQ, outerProfile, innerProfile, surfaceZ,
-    shapeOf, rrRing, sdRR, sweep, signedVolume, buildContainer, buildTracks, buildConnector, buttonParts, buttonFootprint, barbSection, handOf, baseRect, slotsOf, sideSlots, loopOf, loopCurve,
+    shapeOf, rrRing, sdRR, sweep, signedVolume, buildContainer, buildTracks, buildConnector, buttonParts, buttonFootprint, ringSection, lipSection, armStrain, lipAt, baseRect, slotsOf, sideSlots, loopOf, loopCurve,
     cleanLabel, textLine, fitText, faceWithPockets, placeContainerLabel,
     planToWorldRect, worldToPlan, neighborPairs, needsConnector, pairGeometry, connectorPoints, stlBinary, zip, crc32,
   };
@@ -1730,8 +1735,7 @@ function connectorsFor(boxes) {
       }
       if (clash) flagged++;
       s += `<line x1="${X(a[0])}" y1="${Y(a[1])}" x2="${X(b[0])}" y2="${Y(b[1])}" style="stroke:${clash ? 'var(--warn)' : 'var(--accent)'}" stroke-width="${2 * R}" stroke-linecap="butt"/>`;
-      const d = [(b[0] - a[0]) / c.len, (b[1] - a[1]) / c.len];
-      for (const [pt, o, h] of [[a, c.oa, K.handOf(c.oa, d)], [b, c.ob, K.handOf(c.ob, [-d[0], -d[1]])]]) s += K.buttonFootprint(pt, o, P, h).map(poly => `<polygon points="${poly.map(q => `${f2(X(q[0]))},${f2(Y(q[1]))}`).join(' ')}" class="f-acc-ink"/>`).join('');
+      for (const [pt, o] of [[a, c.oa], [b, c.ob]]) s += K.buttonFootprint(pt, o, P).map(poly => `<polygon points="${poly.map(q => `${f2(X(q[0]))},${f2(Y(q[1]))}`).join(' ')}" class="f-acc-ink"/>`).join('');
     }
     $('#k-plan').innerHTML = s;
     const diag = conns.filter(c => !c.straight).length;
@@ -1782,82 +1786,87 @@ function connectorsFor(boxes) {
 
 // ===================================================================== 06 PRINT
 const BP = K.buttonParts(P);
+const LIP_D = P.lipOut - (P.slotW / 2 - P.beadR);             // how far the ring squeezes, in
 (function printPlan() {
   // u along the channel (x on screen), o across it (up on screen = toward the outer wall)
   const sc = 330, cx = 360, cy = 196;
   const X = u => cx + u * sc, Y = o => cy - o * sc;
   const half = P.slotW / 2, crest = half - P.beadR;
   const rect = (u0, u1, o0, o1, cls, extra = '') => `<rect x="${f2(X(Math.min(u0, u1)))}" y="${f2(Y(Math.max(o0, o1)))}" width="${f2(Math.abs(u1 - u0) * sc)}" height="${f2(Math.abs(o1 - o0) * sc)}" class="${cls}" ${extra}/>`;
+  const W = (r, th) => [X(r * Math.sin(th)), Y(r * Math.cos(th))];
   let s = '';
   // walls and beads
   s += rect(-1.1, 1.1, half, half + P.ringT, 'f-wall') + rect(-1.1, 1.1, -half - P.ringT, -half, 'f-wall');
   s += rect(-1.1, 1.1, crest, half, 'f-wall', 'opacity=".55"') + rect(-1.1, 1.1, -half, -crest, 'f-wall', 'opacity=".55"');
   s += `<line x1="0" y1="${f2(Y(crest))}" x2="720" y2="${f2(Y(crest))}" class="s-mut" stroke-width=".8" stroke-dasharray="4 3"/><line x1="0" y1="${f2(Y(-crest))}" x2="720" y2="${f2(Y(-crest))}" class="s-mut" stroke-width=".8" stroke-dasharray="4 3"/>`;
-  // strap leaving under the outer wall
-  s += rect(-P.strapW / 2, P.strapW / 2, 0, half + P.ringT + 0.12, 'f-acc', 'opacity=".35"');
-  // core and arms
-  s += `<circle cx="${X(0)}" cy="${Y(0)}" r="${f2(BP.coreR * sc)}" class="f-acc"/>`;
-  for (const A of BP.arms) {
-    s += rect(A.u0, A.u1, A.o0, A.o1, 'f-acc');
-    const face = A.sign > 0 ? A.o1 : A.o0, tip = A.sign * P.barbOut;
-    s += rect(A.barb[0], A.barb[1], face, tip, 'f-acc');
-    // flex arrow at the tip, pointing toward the core
-    const ux = X((A.barb[0] + A.barb[1]) / 2), y0 = Y(tip + A.sign * 0.05), y1 = Y(tip - A.sign * 0.07);
-    s += `<line x1="${f2(ux)}" y1="${f2(y0)}" x2="${f2(ux)}" y2="${f2(y1)}" class="s-acc" stroke-width="1.6"/><path d="M${f2(ux - 5)} ${f2(y1 + (A.sign > 0 ? -7 : 7))} L${f2(ux)} ${f2(y1)} L${f2(ux + 5)} ${f2(y1 + (A.sign > 0 ? -7 : 7))}" class="s-acc" stroke-width="1.6"/>`;
-  }
+  // strap: necked under the ring, full width beyond it, leaving under the outer wall
+  const sN = BP.ro + 0.01, wn = P.neckW / 2, Wh = P.strapW / 2, far = half + P.ringT + 0.12;
+  s += `<polygon points="${[[-wn, 0], [-wn, sN], [-Wh, sN], [-Wh, far], [Wh, far], [Wh, sN], [wn, sN], [wn, 0]].map(([u, o]) => `${f2(X(u))},${f2(Y(o))}`).join(' ')}" class="f-acc" opacity=".35"/>`;
+  // the slotted ring (lip on the inner side) and the post
+  const t0 = Math.PI + BP.gap / 2, t1 = 3 * Math.PI - BP.gap / 2, n = 120, outer = [], inner = [];
+  for (let j = 0; j <= n; j++) { const th = t0 + (t1 - t0) * j / n; outer.push(W(BP.ro + (BP.lipR - BP.ro) * K.lipAt(th, BP), th)); inner.push(W(BP.ri, th)); }
+  s += `<polygon points="${outer.concat(inner.reverse()).map(p => p.map(f2).join(',')).join(' ')}" class="f-acc"/>`;
+  s += `<circle cx="${X(0)}" cy="${Y(0)}" r="${f2(BP.postR * sc)}" class="f-acc"/>`;
+  // where the neck holds the ring
+  for (const sg of [1, -1]) { const [ax, ay] = W(BP.ro + 0.03, sg * BP.anchor), [bx, by] = W(BP.ri - 0.02, sg * BP.anchor); s += `<line x1="${f2(ax)}" y1="${f2(ay)}" x2="${f2(bx)}" y2="${f2(by)}" class="s-ink" stroke-width="1.2" stroke-dasharray="2 2"/>`; }
   const lab = (x, y, t, a = 'start', cls = 't') => `<text x="${f2(x)}" y="${f2(y)}" text-anchor="${a}" font-size="11" class="${cls}">${t}</text>`;
   s += lab(10, Y(half + P.ringT) + 14, 'outer wall (the strap passes under it)', 'start', 't-ink') + lab(10, Y(-half) + 14, 'inner wall', 'start', 't-ink');
   s += lab(712, Y(crest) - 6, 'bead crest', 'end') + lab(712, Y(-crest) + 14, 'bead crest', 'end');
-  s += lab(X(0), Y(-0.02) + 4, 'core', 'middle', 'f-bg-t');
-  s += lab(X(BP.arms[0].u1) + 12, Y(P.barbOut) + 4, 'hook', 'start', 't-acc') + lab(X(BP.arms[1].u0) - 12, Y(-P.barbOut) + 4, 'hook', 'end', 't-acc');
-  s += lab(X(0.36), Y(BP.arms[0].o0) + 16, 'spring arm 0.9 mm', 'start', 't-acc') + lab(X(-0.36), Y(BP.arms[1].o1) - 8, 'spring arm', 'end', 't-acc');
-  s += lab(X(0), Y(half + P.ringT + 0.12) - 6, 'strap', 'middle', 't-acc');
+  s += lab(X(0.29), Y(-0.215) + 4, 'lip', 'start', 't-acc') + lab(X(0), Y(-BP.ro) + 30, '', 'middle');
+  s += lab(X(0.27), Y(0.02), 'arm 0.9 mm', 'start', 't-acc') + lab(X(-0.27), Y(0.02), 'arm', 'end', 't-acc');
+  s += lab(X(0.42), Y(-0.1), 'slot', 'start', 't-acc') + `<line x1="${f2(X(0.41))}" y1="${f2(Y(-0.1) - 3)}" x2="${f2(X(0.02))}" y2="${f2(Y(-BP.ri - 0.012))}" class="s-mut" stroke-width=".7"/>`;
+  s += lab(X(-0.36), Y(0.15), 'neck holds it here', 'end', 't-ink') + `<line x1="${f2(X(-0.35))}" y1="${f2(Y(0.15) - 3)}" x2="${f2(W(BP.ro + 0.03, -BP.anchor)[0])}" y2="${f2(W(BP.ro + 0.03, -BP.anchor)[1])}" class="s-mut" stroke-width=".7"/>`;
+  s += lab(X(0), Y(0) + 4, 'post', 'middle', 'f-bg-t');
+  s += lab(X(0), Y(far) - 6, 'strap', 'middle', 't-acc');
   $('#p-plan').innerHTML = s.replace('class="f-bg-t"', 'style="fill:#fff;font-family:var(--font-data)"');
 })();
 (function printHook() {
-  // section through a hook (o across, z up), seated above the outer wall's half bead
-  const sc = 600, ox = -0.08, oz = 0.1;
-  const X = o => (o - ox) * sc, Y = z => (oz - z) * sc;
+  // section through the lip (r from the button centre to the right, z up), seated above the inner wall's bead
+  const sc = 600, ox = -0.02, oz = 0.1;
+  const X = r => (r - ox) * sc, Y = z => (oz - z) * sc;
   const half = P.slotW / 2, zf = -P.trackH, zs = zf + P.slitH, br = P.beadR;
-  const poly = (pts, cls, extra = '') => `<polygon points="${pts.map(([o, z]) => `${f2(X(o))},${f2(Y(z))}`).join(' ')}" class="${cls}" ${extra}/>`;
-  const A = BP.arms[0], sec = K.barbSection(A.o1, P.barbOut, P);
+  const poly = (pts, cls, extra = '') => `<polygon points="${pts.map(([r, z]) => `${f2(X(r))},${f2(Y(z))}`).join(' ')}" class="${cls}" ${extra}/>`;
+  const sec = K.ringSection(1, P);
   let s = '';
   s += poly([[ox, 0], [0.6, 0], [0.6, P.wall], [ox, P.wall]], 'f-base s-ink', 'stroke-width="1"');                 // container floor
-  s += poly([[half, zs], [half + P.ringT, zs], [half + P.ringT, 0], [half, 0]], 'f-wall s-ink', 'stroke-width="1"');  // outer wall
-  s += `<path d="M${f2(X(half - br))} ${f2(Y(zs))} A${f2(br * sc)} ${f2(br * sc)} 0 0 1 ${f2(X(half + br))} ${f2(Y(zs))} Z" class="f-wall s-ink" stroke-width="1"/>`;
+  s += poly([[half, zf], [half + P.ringT, zf], [half + P.ringT, 0], [half, 0]], 'f-wall s-ink', 'stroke-width="1"');  // inner wall, full height
+  s += `<circle cx="${f2(X(half))}" cy="${f2(Y(zs))}" r="${f2(br * sc)}" class="f-wall s-ink" stroke-width="1"/>`;
   s += `<line x1="0" y1="${f2(Y(zf))}" x2="360" y2="${f2(Y(zf))}" class="s-ax" stroke-width="1"/>`;
-  // the arm while passing the bead, bent in by the engagement (dashed), then seated (solid)
-  const d = P.barbOut - (half - br);
-  s += poly(sec.map(([o, z]) => [o - d, z]).concat([[A.o0 - d, -0.115], [A.o0 - d, -0.02]]), 's-acc', 'fill="none" stroke-width="1" stroke-dasharray="3 3"');
-  s += poly([[A.o0, zf], [A.o1, zf], [A.o1, -0.02], [A.o0, -0.02]], 'f-acc');
+  // the post
+  const zp = zf + P.postH, fp = Math.min(0.06, BP.postR * 0.6);
+  s += `<path d="M${f2(X(ox))} ${f2(Y(zf))} L${f2(X(BP.postR))} ${f2(Y(zf))} L${f2(X(BP.postR))} ${f2(Y(zp - fp))} A${f2(fp * sc)} ${f2(fp * sc)} 0 0 0 ${f2(X(BP.postR - fp))} ${f2(Y(zp))} L${f2(X(ox))} ${f2(Y(zp))} Z" class="f-acc" opacity=".55"/>`;
+  // the ring squeezed while passing the crest (dashed), then seated (solid)
+  s += poly(sec.map(([r, z]) => [r - LIP_D, z]), 's-acc', 'fill="none" stroke-width="1" stroke-dasharray="3 3"');
   s += poly(sec, 'f-acc');
   const lab = (x, y, t, a = 'start', cls = 't') => `<text x="${f2(x)}" y="${f2(y)}" text-anchor="${a}" font-size="10.5" class="${cls}">${t}</text>`;
   const lead = (x1, y1, x2, y2) => `<line x1="${f2(x1)}" y1="${f2(y1)}" x2="${f2(x2)}" y2="${f2(y2)}" class="s-mut" stroke-width=".7"/>`;
   s += lab(6, Y(P.wall) - 6, 'container floor', 'start', 't-ink');
-  s += lead(X(0.21), Y(-0.054), X(0.06), Y(-0.04)) + lab(X(0.06) - 4, Y(-0.04) + 4, '30° lead-in', 'end', 't-acc');
-  s += lead(X(0.2), Y(-0.115), X(0.06), Y(-0.125)) + lab(X(0.06) - 4, Y(-0.125) + 4, '45° release', 'end', 't-acc');
-  s += lead(X(half + 0.02), Y(zs + 0.03), X(0.45), Y(-0.19)) + lab(X(0.45) + 4, Y(-0.19) + 4, 'bead', 'start');
-  s += lead(X(A.o0 - d + 0.005), Y(-0.2), X(0.06), Y(-0.21)) + lab(X(0.06) - 4, Y(-0.21) + 4, 'flexed', 'end', 't-acc');
-  s += lab(X(half + P.ringT / 2), Y(-0.07), 'outer', 'middle', 't-ink') + lab(X(half + P.ringT / 2), Y(-0.07) + 12, 'wall', 'middle', 't-ink');
-  s += lab(X(half + P.ringT / 2), Y(zf) - 6, 'slit', 'middle');
+  s += lead(X(0.207), Y(-0.07), X(0.3), Y(-0.035)) + lab(X(0.3) + 4, Y(-0.035) + 4, '30° lead-in', 'start', 't-acc');
+  s += lead(X(0.207), Y(-0.117), X(0.3), Y(-0.08)) + lab(X(0.3) + 4, Y(-0.08) + 4, '45° release', 'start', 't-acc');
+  s += lead(X(half + 0.035), Y(zs - 0.02), X(0.36), Y(-0.17)) + lab(X(0.36) + 4, Y(-0.17) + 4, 'bead', 'start');
+  s += lead(X(BP.ri - LIP_D), Y(-0.215), X(0.05), Y(-0.29)) + lab(X(0.05), Y(-0.29) + 13, 'squeezed', 'middle', 't-acc');
+  s += lab(X(BP.postR / 2), Y(zf + 0.08), 'post', 'middle', 't-ink');
+  s += lab(X(half + P.ringT / 2), Y(-0.225), 'inner wall', 'middle', 't-ink');
   $('#p-hook').innerHTML = s;
 })();
 (function printStrain() {
-  const d = (P.barbOut - (P.slotW / 2 - P.beadR)) * 25.4, t = P.armT * 25.4, Lc = (P.armReach - P.strapW / 2) * 25.4;
-  const eps = L => 150 * d * t / (L * L);                     // percent
-  const x0 = 46, x1 = 340, y0 = 262, y1 = 22, Lmin = 3, Lmax = 14, Emax = 8;
-  const X = L => x0 + (L - Lmin) / (Lmax - Lmin) * (x1 - x0), Y = e => y0 - Math.min(e, Emax) / Emax * (y0 - y1);
+  const d = LIP_D * 25.4, t = P.btnWall * 25.4, R = BP.rm * 25.4;
+  const eps = deg => 100 * K.armStrain(deg * Math.PI / 180, d, t, R);       // percent
+  const x0 = 46, x1 = 340, y0 = 262, y1 = 26, Amin = 40, Amax = 180, Emax = 6;
+  const X = a => x0 + (a - Amin) / (Amax - Amin) * (x1 - x0), Y = e => y0 - Math.min(e, Emax) / Emax * (y0 - y1);
   let s = '';
   for (let e = 0; e <= Emax; e += 2) s += `<line x1="${x0}" y1="${f2(Y(e))}" x2="${x1}" y2="${f2(Y(e))}" class="s-ax" stroke-width=".5" opacity=".6"/><text x="${x0 - 6}" y="${f2(Y(e) + 4)}" text-anchor="end" font-size="10" class="t">${e} %</text>`;
-  for (let L = 4; L <= Lmax; L += 2) s += `<text x="${f2(X(L))}" y="${y0 + 16}" text-anchor="middle" font-size="10" class="t">${L}</text>`;
-  s += `<text x="${(x0 + x1) / 2}" y="${y0 + 32}" text-anchor="middle" font-size="10" class="t">free arm length, mm</text>`;
+  for (let a = 60; a <= Amax; a += 30) s += `<text x="${f2(X(a))}" y="${y0 + 16}" text-anchor="middle" font-size="10" class="t">${a}°</text>`;
+  s += `<text x="${(x0 + x1) / 2}" y="${y0 + 32}" text-anchor="middle" font-size="10" class="t">how far each arm sweeps round the ring</text>`;
   s += `<rect x="${x0}" y="${f2(Y(3))}" width="${x1 - x0}" height="${f2(Y(2) - Y(3))}" class="f-soft" opacity=".7"/><text x="${x1 - 4}" y="${f2(Y(3) - 5)}" text-anchor="end" font-size="10" class="t">rule-of-thumb limit for PLA, 2–3 %</text>`;
-  const pts = []; for (let L = Lmin; L <= Lmax + 1e-9; L += 0.1) pts.push(`${f2(X(L))},${f2(Y(eps(L)))}`);
+  const pts = []; for (let a = Amin; a <= Amax + 1e-9; a += 1) pts.push(`${f2(X(a))},${f2(Y(eps(a)))}`);
   s += `<polyline points="${pts.join(' ')}" class="s-acc" stroke-width="2"/>`;
-  const Lv = (P.trackH - 0.11) * 25.4;                         // an arm standing up inside the track's height
-  s += `<circle cx="${f2(X(Lv))}" cy="${f2(Y(eps(Lv)))}" r="4" class="f-bg s-acc" stroke-width="2"/><text x="${f2(X(Lv) + 8)}" y="${f2(Y(eps(Lv)) + 4)}" font-size="10" class="t">standing arm, ${Lv.toFixed(1)} mm: ${eps(Lv).toFixed(1)} %</text>`;
-  s += `<circle cx="${f2(X(Lc))}" cy="${f2(Y(eps(Lc)))}" r="4.5" class="f-acc"/><line x1="${f2(X(Lc))}" y1="${f2(Y(eps(Lc)) - 6)}" x2="${f2(X(Lc) + 10)}" y2="${f2(Y(4.6) + 4)}" class="s-acc" stroke-width=".8"/><text x="${f2(X(Lc) + 12)}" y="${f2(Y(4.6))}" text-anchor="middle" font-size="10.5" class="t-acc">this arm, ${Lc.toFixed(1)} mm: ${eps(Lc).toFixed(1)} %</text>`;
-  s += `<text x="${x0}" y="12" font-size="10" class="t">ε = 3δt / 2L², δ = ${d.toFixed(2)} mm, t = ${t.toFixed(2)} mm</text>`;
+  const aMe = BP.armAngle * 180 / Math.PI, aDiag = aMe - 45;
+  s += `<circle cx="${f2(X(aDiag))}" cy="${f2(Y(eps(aDiag)))}" r="4" class="f-bg s-acc" stroke-width="2"/><text x="${f2(X(aDiag) + 8)}" y="${f2(Y(eps(aDiag)) - 7)}" font-size="10" class="t">strap leaning 45°: ${eps(aDiag).toFixed(1)} %</text>`;
+  s += `<circle cx="${f2(X(aMe))}" cy="${f2(Y(eps(aMe)))}" r="4.5" class="f-acc"/><text x="${f2(X(aMe))}" y="${f2(Y(eps(aMe)) + 20)}" text-anchor="middle" font-size="10.5" class="t-acc">these arms, ${aMe.toFixed(0)}°: ${eps(aMe).toFixed(1)} %</text>`;
+  const fing = 150 * d * t / Math.pow((P.trackH - 0.125) * 25.4, 2);
+  s += `<text x="${x1}" y="${y1 - 6}" text-anchor="end" font-size="10" class="t">four standing fingers instead: ${fing.toFixed(1)} % ↑</text>`;
+  s += `<text x="${x0}" y="10" font-size="10" class="t">ε = δt / 2R²k, δ = ${d.toFixed(2)} mm, t = ${t.toFixed(2)} mm, R = ${R.toFixed(1)} mm</text>`;
   $('#p-strain').innerHTML = s;
 })();
 (function print() {
@@ -1865,7 +1874,7 @@ const BP = K.buttonParts(P);
   const D = 0.25, g = 2 * D, sc = 165, x0 = -1.92;
   const X = x => (x - x0) * sc, Y = z => 150 - z * sc;            // z = 0: underside of both floors
   const o = 0.45, t = P.ringT, ch = P.slotW, zf = -P.trackH, zs = zf + P.slitH, br = P.beadR, w = P.wall, top = 0.42;
-  const R = BP.coreR, Ht = P.trackH - P.btnTopTol, T = P.slitH - P.strapTol;
+  const T = P.slitH - P.strapTol;
   const rect = (xa, xb, za, zb, cls) => `<rect x="${f2(X(Math.min(xa, xb)))}" y="${f2(Y(Math.max(za, zb)))}" width="${f2(Math.abs(xb - xa) * sc)}" height="${f2(Math.abs(zb - za) * sc)}" class="${cls}" stroke-width="1"/>`;
   let s = `<line x1="0" y1="${Y(zf)}" x2="720" y2="${Y(zf)}" class="s-ax" stroke-width="1"/><text x="6" y="${Y(zf) + 14}" font-size="10" class="t">drawer floor</text>`;
   s += `<polygon points="${f2(X(x0))},${f2(Y(w))} ${f2(X(-w * 0.7))},${f2(Y(w))} ${f2(X(D * top / 3))},${f2(Y(top))} ${f2(X(D * top / 3 + w * 1.1))},${f2(Y(top))} ${f2(X(0))},${f2(Y(0))} ${f2(X(x0))},${f2(Y(0))}" class="f-dome s-ink" stroke-width="1" stroke-linejoin="round"/>`;
@@ -1881,15 +1890,20 @@ const BP = K.buttonParts(P);
   }
   const ca = A(o + t + ch / 2), cb = B(o + t + ch / 2);
   s += rect(ca, cb, zf, zf + T, 'f-acc');
-  const fr = Math.min(P.btnFillet, R * 0.7, Ht * 0.6) * sc;   // the core's rounded top
-  for (const c of [ca, cb]) { const l = X(c - R), r = X(c + R), b = Y(zf), tp = Y(zf + Ht);
-    s += `<path d="M${f2(l)} ${f2(b)} L${f2(l)} ${f2(tp + fr)} A${f2(fr)} ${f2(fr)} 0 0 1 ${f2(l + fr)} ${f2(tp)} L${f2(r - fr)} ${f2(tp)} A${f2(fr)} ${f2(fr)} 0 0 1 ${f2(r)} ${f2(tp + fr)} L${f2(r)} ${f2(b)} Z" class="f-acc"/>`; }
+  // each button: the ring wall on both sides (plain toward the gap, the lip toward its own inner wall) and the post
+  const plain = K.ringSection(0, P), lip = K.ringSection(1, P), zp = zf + P.postH, fp = Math.min(0.06, BP.postR * 0.6) * sc;
+  const wall = (c, dir, sec) => `<polygon points="${sec.map(([r, z]) => `${f2(X(c + dir * r))},${f2(Y(z))}`).join(' ')}" class="f-acc"/>`;
+  for (const [c, toGap] of [[ca, 1], [cb, -1]]) {
+    s += wall(c, toGap, plain) + wall(c, -toGap, lip);
+    const l = X(c - BP.postR), r = X(c + BP.postR), b = Y(zf), tp = Y(zp);
+    s += `<path d="M${f2(l)} ${f2(b)} L${f2(l)} ${f2(tp + fp)} A${f2(fp)} ${f2(fp)} 0 0 1 ${f2(l + fp)} ${f2(tp)} L${f2(r - fp)} ${f2(tp)} A${f2(fp)} ${f2(fp)} 0 0 1 ${f2(r)} ${f2(tp + fp)} L${f2(r)} ${f2(b)} Z" class="f-acc" opacity=".6"/>`;
+  }
   const lab = (x, y, txt, anchor = 'middle', cls = 't') => `<text x="${f2(x)}" y="${f2(y)}" text-anchor="${anchor}" font-size="11" class="${cls}">${txt}</text>`;
   const lead = (x1, y1, x2, y2) => `<line x1="${f2(x1)}" y1="${f2(y1)}" x2="${f2(x2)}" y2="${f2(y2)}" class="s-mut" stroke-width=".7"/>`;
   s += lab(8, 22, 'container A · slanted wall', 'start', 't-ink') + lab(712, 22, 'container B · slanted wall', 'end', 't-ink');
   s += lead(X(A(o + t + ch)), Y(zs) - 4, X(A(o + t + ch)) - 18, 62) + lab(X(A(o + t + ch)) - 22, 58, 'bead r 0.05', 'end');
   s += lead(X(A(o + t / 2)), Y(-0.04), X(A(o + t / 2)) + 10, 62) + lab(X(A(o + t / 2)) + 14, 58, 'outer wall, slit below', 'start');
-  s += lead(X(cb), Y(zf + Ht), X(cb) + 8, 62) + lab(714, 58, 'core ⌀ 0.38, rounded top', 'end');
+  s += lead(X(cb + BP.lipR - 0.01), Y(-0.095), X(cb) + 8, 62) + lab(714, 58, 'slotted ring, lip on the bead', 'end');
   s += lead(X((ca + cb) / 2), Y(zf + T / 2), X((ca + cb) / 2), 224) + lab(X((ca + cb) / 2), 240, 'strap 0.098 in · slit 0.1 in');
   s += lead(X(A(o + 1.5 * t + ch)), Y(-0.2), X(A(o + 1.5 * t + ch)), 224) + lab(8, 240, 'inner wall = foot', 'start');
   s += lab(X(g / 2), Y(0.16), '2 × slant', 'middle', 't-acc');
